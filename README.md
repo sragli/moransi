@@ -31,7 +31,7 @@ end
 ## Usage
 
 ```elixir
-elixir# Create a test image
+# Create a test image
 image = MoransI.create_test_image(:clustered, 5)
 
 # Compute global Moran's I
