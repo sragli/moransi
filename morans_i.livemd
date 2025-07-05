@@ -1,0 +1,345 @@
+# Moran's I Image Analysis
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.12.0"},
+  {:vega_lite, "~> 0.1.8"},
+  {:kino_vega_lite, "~> 0.1.11"},
+  {:moransi, path: __DIR__}
+])
+
+alias VegaLite, as: Vl
+```
+
+## Introduction
+
+This LiveBook demonstrates the capabilities of the `MoransI` module for computing spatial autocorrelation in images using Moran's I statistics. Moran's I helps identify spatial patterns and clusters in 2D data.
+
+## 1. Creating Test Images
+
+Let's start by creating different types of test images to demonstrate various spatial patterns:
+
+```elixir
+clustered_image = MoransI.create_test_image(:clustered, 8)
+random_image = MoransI.create_test_image(:random, 8)
+dispersed_image = MoransI.create_test_image(:dispersed, 8)
+```
+
+## 2. Visualizing Test Images
+
+Let's create heatmaps to better visualize our test images:
+
+```elixir
+defmodule Visualizer do
+  def image_to_heatmap_data(image, title) do
+    image
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {row, i} ->
+      row
+      |> Enum.with_index()
+      |> Enum.map(fn {value, j} ->
+        %{x: j, y: i, value: value, image: title}
+      end)
+    end)
+  end
+  
+  def create_heatmap(data, title) do
+    Vl.new(width: 200, height: 200, title: title)
+    |> Vl.data_from_values(data)
+    |> Vl.mark(:rect)
+    |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
+    |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row", sort: :descending)
+    |> Vl.encode_field(:color, "value", 
+        type: :quantitative, 
+        scale: [scheme: "viridis"],
+        title: "Value")
+  end
+end
+
+# Create heatmaps for each pattern
+clustered_data = Visualizer.image_to_heatmap_data(clustered_image, "Clustered")
+random_data = Visualizer.image_to_heatmap_data(random_image, "Random")
+dispersed_data = Visualizer.image_to_heatmap_data(dispersed_image, "Dispersed")
+
+clustered_chart = Visualizer.create_heatmap(clustered_data, "Clustered Pattern")
+random_chart = Visualizer.create_heatmap(random_data, "Random Pattern")
+dispersed_chart = Visualizer.create_heatmap(dispersed_data, "Dispersed Pattern")
+
+# Display charts
+Kino.Layout.grid([clustered_chart, random_chart, dispersed_chart], columns: 3)
+```
+
+## 3. Global Moran's I Analysis
+
+Now let's compute the global Moran's I for each pattern:
+
+```elixir
+clustered_global = MoransI.global_morans_i(clustered_image)
+random_global = MoransI.global_morans_i(random_image)
+dispersed_global = MoransI.global_morans_i(dispersed_image)
+
+results_data = [
+  %{pattern: "Clustered", morans_i: clustered_global.morans_i, 
+    z_score: clustered_global.z_score, p_value: clustered_global.p_value,
+    interpretation: if(clustered_global.morans_i > 0, do: "Positive Autocorr.", else: "Negative Autocorr.")},
+  %{pattern: "Random", morans_i: random_global.morans_i, 
+    z_score: random_global.z_score, p_value: random_global.p_value,
+    interpretation: if(abs(random_global.morans_i) < 0.1, do: "No Autocorr.", else: "Some Autocorr.")},
+  %{pattern: "Dispersed", morans_i: dispersed_global.morans_i, 
+    z_score: dispersed_global.z_score, p_value: dispersed_global.p_value,
+    interpretation: if(dispersed_global.morans_i < 0, do: "Negative Autocorr.", else: "Positive Autocorr.")}
+]
+
+Kino.DataTable.new(results_data)
+```
+
+## 4. Detailed Analysis of Global Results
+
+```elixir
+morans_chart = 
+  Vl.new(width: 400, height: 300, title: "Global Moran's I by Pattern")
+  |> Vl.data_from_values(results_data)
+  |> Vl.mark(:bar)
+  |> Vl.encode_field(:x, "pattern", type: :nominal, title: "Pattern Type")
+  |> Vl.encode_field(:y, "morans_i", type: :quantitative, title: "Moran's I")
+  |> Vl.encode_field(:color, "morans_i", 
+      type: :quantitative,
+      scale: [scheme: "redblue", domain: [-1, 1]])
+
+zscore_chart = 
+  Vl.new(width: 400, height: 300, title: "Z-Scores by Pattern")
+  |> Vl.data_from_values(results_data)
+  |> Vl.mark(:bar)
+  |> Vl.encode_field(:x, "pattern", type: :nominal, title: "Pattern Type")
+  |> Vl.encode_field(:y, "z_score", type: :quantitative, title: "Z-Score")
+  |> Vl.encode_field(:color, "z_score", 
+      type: :quantitative,
+      scale: [scheme: "redblue"])
+
+Kino.Layout.grid([morans_chart, zscore_chart], columns: 2)
+```
+
+## 5. Local Moran's I Analysis
+
+Let's compute local Moran's I (LISA) for the clustered pattern:
+
+```elixir
+local_results = MoransI.local_morans_i(clustered_image)
+
+local_i_values = 
+  local_results
+  |> Enum.with_index()
+  |> Enum.flat_map(fn {row, i} ->
+    row
+    |> Enum.with_index()
+    |> Enum.map(fn {result, j} ->
+      %{x: j, y: i, local_i: result.local_i, 
+        z_score: result.z_score, p_value: result.p_value,
+        cluster_type: result.cluster_type}
+    end)
+  end)
+
+IO.puts("Local Moran's I Results (first few):")
+local_i_values |> Enum.take(10) |> Enum.each(&IO.inspect/1)
+```
+
+## 6. Visualizing Local Moran's I
+
+```elixir
+# Create heatmap for local Moran's I values
+local_i_chart = 
+  Vl.new(width: 300, height: 300, title: "Local Moran's I Values")
+  |> Vl.data_from_values(local_i_values)
+  |> Vl.mark(:rect)
+  |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
+  |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row", sort: :descending)
+  |> Vl.encode_field(:color, "local_i", 
+      type: :quantitative,
+      scale: [scheme: "redblue"],
+      title: "Local I")
+
+# Create heatmap for cluster types
+cluster_chart = 
+  Vl.new(width: 300, height: 300, title: "Cluster Types (LISA)")
+  |> Vl.data_from_values(local_i_values)
+  |> Vl.mark(:rect)
+  |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
+  |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row", sort: :descending)
+  |> Vl.encode_field(:color, "cluster_type", 
+      type: :nominal,
+      scale: [
+        domain: ["hh", "ll", "hl", "lh", "ns"],
+        range: ["#d62728", "#1f77b4", "#ff7f0e", "#2ca02c", "#cccccc"]
+      ],
+      title: "Cluster Type")
+
+# Display significance heatmap
+sig_chart = 
+  Vl.new(width: 300, height: 300, title: "Statistical Significance")
+  |> Vl.data_from_values(local_i_values)
+  |> Vl.mark(:rect)
+  |> Vl.encode_field(:x, "x", type: :ordinal, title: "Column")
+  |> Vl.encode_field(:y, "y", type: :ordinal, title: "Row", sort: :descending)
+  |> Vl.encode_field(:color, "p_value", 
+      type: :quantitative,
+      scale: [scheme: "reds", reverse: true],
+      title: "P-Value")
+
+Kino.Layout.grid([local_i_chart, cluster_chart, sig_chart], columns: 3)
+```
+
+## 7. Connectivity Comparison
+
+Let's compare results using different connectivity patterns:
+
+```elixir
+# Compare Queen (8-connectivity) vs Rook (4-connectivity)
+queen_result = MoransI.global_morans_i(clustered_image, connectivity: :queen)
+rook_result = MoransI.global_morans_i(clustered_image, connectivity: :rook)
+
+connectivity_data = [
+  %{connectivity: "Queen (8-conn)", morans_i: queen_result.morans_i, 
+    z_score: queen_result.z_score, p_value: queen_result.p_value},
+  %{connectivity: "Rook (4-conn)", morans_i: rook_result.morans_i, 
+    z_score: rook_result.z_score, p_value: rook_result.p_value}
+]
+
+IO.puts("Connectivity Comparison:")
+Kino.DataTable.new(connectivity_data)
+```
+
+## 9. Real-World Example: Simulated Satellite Data
+
+Let's create a more realistic example simulating satellite imagery:
+
+```elixir
+defmodule SatelliteSimulator do
+  def create_vegetation_map(size \\ 20) do
+    # Simulate vegetation density with clusters
+    :rand.seed(:exsplus, {42, 17, 89})
+    
+    # Create base random field
+    base = for _ <- 0..(size-1) do
+      for _ <- 0..(size-1) do
+        :rand.uniform() * 0.3
+      end
+    end
+    
+    # Add vegetation clusters
+    clusters = [
+      {div(size, 4), div(size, 4), 0.8},      # Forest patch
+      {3 * div(size, 4), div(size, 4), 0.6},  # Grassland
+      {div(size, 2), 3 * div(size, 4), 0.9}   # Dense forest
+    ]
+    
+    for {row, i} <- Enum.with_index(base) do
+      for {base_val, j} <- Enum.with_index(row) do
+        cluster_effect = Enum.reduce(clusters, 0, fn {cx, cy, intensity}, acc ->
+          distance = :math.sqrt((i - cx) * (i - cx) + (j - cy) * (j - cy))
+          if distance < size / 8 do
+            acc + intensity * :math.exp(-distance / 3)
+          else
+            acc
+          end
+        end)
+        
+        min(1.0, base_val + cluster_effect)
+      end
+    end
+  end
+end
+
+# Create simulated satellite data
+vegetation_map = SatelliteSimulator.create_vegetation_map(15)
+
+# Analyze the vegetation map
+veg_global = MoransI.global_morans_i(vegetation_map)
+veg_local = MoransI.local_morans_i(vegetation_map)
+
+# Visualize
+veg_data = Visualizer.image_to_heatmap_data(vegetation_map, "Vegetation")
+veg_chart = 
+  Vl.new(width: 400, height: 400, title: "Simulated Vegetation Density")
+  |> Vl.data_from_values(veg_data)
+  |> Vl.mark(:rect)
+  |> Vl.encode_field(:x, "x", type: :ordinal, title: "Longitude")
+  |> Vl.encode_field(:y, "y", type: :ordinal, title: "Latitude", sort: :descending)
+  |> Vl.encode_field(:color, "value", 
+      type: :quantitative,
+      scale: [scheme: "greens"],
+      title: "Density")
+
+# Extract cluster information
+cluster_data = 
+  veg_local
+  |> Enum.with_index()
+  |> Enum.flat_map(fn {row, i} ->
+    row
+    |> Enum.with_index()
+    |> Enum.map(fn {result, j} ->
+      %{x: j, y: i, cluster_type: result.cluster_type, 
+        local_i: result.local_i, p_value: result.p_value}
+    end)
+  end)
+
+cluster_analysis = 
+  Vl.new(width: 400, height: 400, title: "Vegetation Clustering Analysis")
+  |> Vl.data_from_values(cluster_data)
+  |> Vl.mark(:rect)
+  |> Vl.encode_field(:x, "x", type: :ordinal, title: "Longitude")
+  |> Vl.encode_field(:y, "y", type: :ordinal, title: "Latitude", sort: :descending)
+  |> Vl.encode_field(:color, "cluster_type", 
+      type: :nominal,
+      scale: [
+        domain: ["hh", "ll", "hl", "lh", "ns"],
+        range: ["#2d8f2d", "#8b4513", "#ff6347", "#ffd700", "#d3d3d3"]
+      ],
+      title: "Cluster Type")
+
+Kino.Layout.grid([veg_chart, cluster_analysis], columns: 2)
+```
+
+## 10. Summary and Interpretation
+
+```elixir
+summary_data = [
+  %{analysis: "Clustered Pattern", morans_i: clustered_global.morans_i, 
+    interpretation: "Strong positive autocorrelation - similar values cluster together"},
+  %{analysis: "Random Pattern", morans_i: random_global.morans_i, 
+    interpretation: "Weak/no autocorrelation - values are randomly distributed"},
+  %{analysis: "Dispersed Pattern", morans_i: dispersed_global.morans_i, 
+    interpretation: "Negative autocorrelation - checkerboard pattern"},
+  %{analysis: "Vegetation Map", morans_i: veg_global.morans_i, 
+    interpretation: "Positive autocorrelation - vegetation forms natural clusters"}
+]
+
+IO.puts("=== ANALYSIS SUMMARY ===")
+Kino.DataTable.new(summary_data)
+```
+
+## Key Takeaways
+
+1. **Moran's I Range**: Values range from -1 to 1
+
+   * **Positive values**: Indicate spatial clustering (similar values near each other)
+   * **Values near 0**: Indicate random spatial distribution
+   * **Negative values**: Indicate spatial dispersion (dissimilar values near each other)
+
+2. **Global vs Local Analysis**:
+
+   * **Global Moran's I**: Provides an overall measure of spatial autocorrelation
+   * **Local Moran's I (LISA)**: Identifies specific locations of clusters and outliers
+
+3. **Connectivity Matters**: The choice between Queen (8-connectivity) and Rook (4-connectivity) can affect results
+
+4. **Statistical Significance**: Z-scores and p-values help determine if observed patterns are statistically significant
+
+5. **Cluster Types**:
+
+   * **HH (High-High)**: High values surrounded by high values
+   * **LL (Low-Low)**: Low values surrounded by low values
+   * **HL (High-Low)**: High values surrounded by low values (outliers)
+   * **LH (Low-High)**: Low values surrounded by high values (outliers)
+   * **NS (Not Significant)**: No significant spatial pattern
+
+This module is particularly useful for analyzing satellite imagery, medical imaging, geographic data, and any other 2D spatial data where understanding clustering patterns is important.
