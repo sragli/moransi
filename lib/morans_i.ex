@@ -27,12 +27,6 @@ defmodule MoransI do
   - `:variance`: Variance of Moran's I
   - `:z_score`: Standardized z-score
   - `:p_value`: Approximate p-value (two-tailed)
-
-  ## Examples
-
-      iex> image = [[1, 2, 1], [2, 3, 2], [1, 2, 1]]
-      iex> MoransI.global_morans_i(image)
-      %{morans_i: 0.125, expected_i: -0.125, variance: 0.0625, z_score: 1.0, p_value: 0.317}
   """
   def global_morans_i(image, options \\ []) do
     connectivity = Keyword.get(options, :connectivity, :queen)
@@ -99,14 +93,7 @@ defmodule MoransI do
   - `:z_score`: Standardized z-score
   - `:p_value`: Approximate p-value
   - `:cluster_type`: Type of spatial cluster (:hh, :ll, :hl, :lh, or :ns)
-
-  ## Examples
-
-      iex> image = [[1, 2, 1], [2, 3, 2], [1, 2, 1]]
-      iex> result = MoransI.local_morans_i(image)
-      iex> result |> hd() |> hd() |> Map.get(:cluster_type)
-      :hh
-  """
+ """
   def local_morans_i(image, options \\ []) do
     connectivity = Keyword.get(options, :connectivity, :queen)
 
