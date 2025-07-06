@@ -1,4 +1,4 @@
-# Moransi
+# MoransI
 
 Moran's I spatial autocorrelation index for images.
 
