@@ -16,11 +16,28 @@ end
 
 ## Key Features
 
-* Global Moran's I: Computes the overall spatial autocorrelation for the entire image
-* Local Moran's I (LISA): Calculates local indicators of spatial association for each pixel
+* Global Moran's I: Computes the overall spatial autocorrelation for the entire image. Provides an overall measure of spatial autocorrelation
+* Local Moran's I (LISA): Calculates local indicators of spatial association for each pixel, Identifies specific locations of clusters and outliers
 * Flexible connectivity: Supports both 4-connectivity (rook) and 8-connectivity (queen) neighborhoods
 * Statistical testing: Includes z-scores and p-values for significance testing
 * Cluster classification: Identifies spatial cluster types (High-High, Low-Low, High-Low, Low-High)
+
+### Interpretation
+
+* Moran's I Range: Values range from -1 to 1
+  * Positive values: Indicate spatial clustering (similar values near each other)
+  * Values near 0: Indicate random spatial distribution
+  * Negative values: Indicate spatial dispersion (dissimilar values near each other)
+
+Statistical Significance: Z-scores and p-values help determine if observed patterns are statistically significant.
+
+### Cluster Types
+
+* :hh - High-High (positive spatial autocorrelation)
+* :ll - Low-Low (positive spatial autocorrelation)
+* :hl - High-Low (negative spatial autocorrelation)
+* :lh - Low-High (negative spatial autocorrelation)
+* :ns - Not significant
 
 ## Main Functions
 
@@ -43,13 +60,3 @@ local_results = MoransI.local_morans_i(image)
 # Use different connectivity
 result = MoransI.global_morans_i(image, connectivity: :rook)
 ```
-
-## Cluster Types
-
-* :hh - High-High (positive spatial autocorrelation)
-* :ll - Low-Low (positive spatial autocorrelation)
-* :hl - High-Low (negative spatial autocorrelation)
-* :lh - Low-High (negative spatial autocorrelation)
-* :ns - Not significant
-
-The module handles edge cases and provides robust statistical calculations for analyzing spatial patterns in image data.
