@@ -166,6 +166,8 @@ local_i_values |> Enum.take(10) |> Enum.each(&IO.inspect/1)
 
 ## 6. Visualizing Local Moran's I
 
+Visualizing local Moran's I (LISA) for the clustered pattern:
+
 ```elixir
 # Create heatmap for local Moran's I values
 local_i_chart = 
@@ -206,7 +208,7 @@ sig_chart =
       scale: [scheme: "reds", reverse: true],
       title: "P-Value")
 
-Kino.Layout.grid([local_i_chart, cluster_chart, sig_chart], columns: 3)
+Kino.Layout.grid([local_i_chart, cluster_chart, sig_chart], columns: 2)
 ```
 
 ## 7. Connectivity Comparison
