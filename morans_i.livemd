@@ -13,7 +13,28 @@ alias VegaLite, as: Vl
 
 ## Introduction
 
-This LiveBook demonstrates the capabilities of the `MoransI` module for computing spatial autocorrelation in images using Moran's I statistics. Moran's I helps identify spatial patterns and clusters in 2D data.
+This LiveBook demonstrates the capabilities of the `MoransI` module for computing spatial autocorrelation in images using Moran's I statistics.
+
+Moran's I helps identify spatial patterns and clusters in 2D data.
+
+* **Global Moran's I**: Provides an overall measure of spatial autocorrelation
+* **Local Moran's I (LISA)**: Identifies specific locations of clusters and outliers
+
+**Moran's I Range**: Values range from -1 to 1
+
+* **Positive values**: Indicate spatial clustering (similar values near each other)
+* **Values near 0**: Indicate random spatial distribution
+* **Negative values**: Indicate spatial dispersion (dissimilar values near each other)
+
+**Statistical Significance**: Z-scores and p-values help determine if observed patterns are statistically significant.
+
+**Cluster Types**:
+
+* **HH (High-High)**: High values surrounded by high values
+* **LL (Low-Low)**: Low values surrounded by low values
+* **HL (High-Low)**: High values surrounded by low values (outliers)
+* **LH (Low-High)**: Low values surrounded by high values (outliers)
+* **NS (Not Significant)**: No significant spatial pattern
 
 ## 1. Creating Test Images
 
@@ -318,28 +339,5 @@ Kino.DataTable.new(summary_data)
 ```
 
 ## Key Takeaways
-
-1. **Moran's I Range**: Values range from -1 to 1
-
-   * **Positive values**: Indicate spatial clustering (similar values near each other)
-   * **Values near 0**: Indicate random spatial distribution
-   * **Negative values**: Indicate spatial dispersion (dissimilar values near each other)
-
-2. **Global vs Local Analysis**:
-
-   * **Global Moran's I**: Provides an overall measure of spatial autocorrelation
-   * **Local Moran's I (LISA)**: Identifies specific locations of clusters and outliers
-
-3. **Connectivity Matters**: The choice between Queen (8-connectivity) and Rook (4-connectivity) can affect results
-
-4. **Statistical Significance**: Z-scores and p-values help determine if observed patterns are statistically significant
-
-5. **Cluster Types**:
-
-   * **HH (High-High)**: High values surrounded by high values
-   * **LL (Low-Low)**: Low values surrounded by low values
-   * **HL (High-Low)**: High values surrounded by low values (outliers)
-   * **LH (Low-High)**: Low values surrounded by high values (outliers)
-   * **NS (Not Significant)**: No significant spatial pattern
 
 This module is particularly useful for analyzing satellite imagery, medical imaging, geographic data, and any other 2D spatial data where understanding clustering patterns is important.
