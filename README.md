@@ -48,9 +48,6 @@ Statistical Significance: Z-scores and p-values help determine if observed patte
 ## Usage
 
 ```elixir
-# Create a test image
-image = MoransI.create_test_image(:clustered, 5)
-
 # Compute global Moran's I
 global_result = MoransI.global_morans_i(image)
 
