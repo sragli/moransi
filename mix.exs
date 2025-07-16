@@ -1,4 +1,4 @@
-defmodule Moransi.MixProject do
+defmodule MoransI.MixProject do
   use Mix.Project
 
   def project do
