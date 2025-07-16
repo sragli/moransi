@@ -2,7 +2,7 @@ defmodule MoransITest do
   use ExUnit.Case
 
   test "calculates correct global result" do
-    image = MoransI.create_test_image(:clustered, 5)
+    image = create_test_image(:clustered, 5)
 
     assert %{
               morans_i: 0.386663,
@@ -14,7 +14,7 @@ defmodule MoransITest do
   end
 
   test "calculates correct local result" do
-    image = MoransI.create_test_image(:clustered, 5)
+    image = create_test_image(:clustered, 5)
 
     assert [
               [
@@ -178,5 +178,48 @@ defmodule MoransITest do
                 }
               ]
             ] = MoransI.local_morans_i(image)
+  end
+
+  @doc """
+  Create a simple test image with spatial patterns for demonstration.
+
+  ## Parameters
+  - `type`: Type of pattern (`:clustered`, `:random`, `:dispersed`)
+  - `size`: Size of the square image (default: 10)
+
+  ## Returns
+  A 2D list representing the test image.
+  """
+  defp create_test_image(type \\ :clustered, size \\ 10) do
+    case type do
+      :clustered ->
+        # Create clustered pattern
+        for i <- 0..(size-1) do
+          for j <- 0..(size-1) do
+            cond do
+              i < div(size, 2) and j < div(size, 2) -> 1
+              i >= div(size, 2) and j >= div(size, 2) -> 1
+              true -> 0
+            end
+          end
+        end
+
+      :random ->
+        # Create random pattern
+        :rand.seed(:exsplus, {1, 2, 3})
+        for _i <- 0..(size-1) do
+          for _j <- 0..(size-1) do
+            :rand.uniform(2) - 1
+          end
+        end
+
+      :dispersed ->
+        # Create checkerboard pattern
+        for i <- 0..(size-1) do
+          for j <- 0..(size-1) do
+            rem(i + j, 2)
+          end
+        end
+    end
   end
 end
