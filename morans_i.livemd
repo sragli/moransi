@@ -52,8 +52,8 @@ Let's create heatmaps to better visualize our test images:
 
 ```elixir
 defmodule Visualizer do
-  def image_to_heatmap_data(image, title) do
-    image
+  def create_heatmap(image, title) do
+    data = image
     |> Enum.with_index()
     |> Enum.flat_map(fn {row, i} ->
       row
@@ -62,9 +62,7 @@ defmodule Visualizer do
         %{x: j, y: i, value: value, image: title}
       end)
     end)
-  end
-  
-  def create_heatmap(data, title) do
+
     Vl.new(width: 200, height: 200, title: title)
     |> Vl.data_from_values(data)
     |> Vl.mark(:rect)
@@ -78,13 +76,9 @@ defmodule Visualizer do
 end
 
 # Create heatmaps for each pattern
-clustered_data = Visualizer.image_to_heatmap_data(clustered_image, "Clustered")
-random_data = Visualizer.image_to_heatmap_data(random_image, "Random")
-dispersed_data = Visualizer.image_to_heatmap_data(dispersed_image, "Dispersed")
-
-clustered_chart = Visualizer.create_heatmap(clustered_data, "Clustered Pattern")
-random_chart = Visualizer.create_heatmap(random_data, "Random Pattern")
-dispersed_chart = Visualizer.create_heatmap(dispersed_data, "Dispersed Pattern")
+clustered_chart = Visualizer.create_heatmap(clustered_image, "Clustered")
+random_chart = Visualizer.create_heatmap(random_image, "Random")
+dispersed_chart = Visualizer.create_heatmap(dispersed_image, "Dispersed")
 
 # Display charts
 Kino.Layout.grid([clustered_chart, random_chart, dispersed_chart], columns: 3)
