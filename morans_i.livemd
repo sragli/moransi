@@ -227,7 +227,6 @@ connectivity_data = [
     z_score: rook_result.z_score, p_value: rook_result.p_value}
 ]
 
-IO.puts("Connectivity Comparison:")
 Kino.DataTable.new(connectivity_data)
 ```
 
@@ -319,7 +318,7 @@ cluster_analysis =
       ],
       title: "Cluster Type")
 
-Kino.Layout.grid([veg_chart, cluster_analysis], columns: 2)
+Kino.Layout.grid([veg_chart, cluster_analysis], columns: 1)
 ```
 
 ## 10. Summary and Interpretation
@@ -336,7 +335,6 @@ summary_data = [
     interpretation: "Positive autocorrelation - vegetation forms natural clusters"}
 ]
 
-IO.puts("=== ANALYSIS SUMMARY ===")
 Kino.DataTable.new(summary_data)
 ```
 
