@@ -50,22 +50,25 @@ defmodule MoransI do
     w_sum = weights |> List.flatten() |> Enum.sum()
 
     # Moran's I statistic
-    morans_i = if w_sum > 0 and denominator > 0 do
-      (n / w_sum) * (numerator / denominator)
-    else
-      0.0
-    end
+    morans_i =
+      if w_sum > 0 and denominator > 0 do
+        n / w_sum * (numerator / denominator)
+      else
+        0.0
+      end
 
     # Expected value under null hypothesis
     expected_i = -1.0 / (n - 1)
 
     # Calculate variance and z-score
     variance = calculate_variance(n, weights)
-    z_score = if variance > 0 do
-      (morans_i - expected_i) / :math.sqrt(variance)
-    else
-      0.0
-    end
+
+    z_score =
+      if variance > 0 do
+        (morans_i - expected_i) / :math.sqrt(variance)
+      else
+        0.0
+      end
 
     # Approximate p-value (two-tailed)
     p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
@@ -80,20 +83,20 @@ defmodule MoransI do
   end
 
   @doc """
-  Compute local Moran's I (LISA - Local Indicators of Spatial Association) for each pixel.
+   Compute local Moran's I (LISA - Local Indicators of Spatial Association) for each pixel.
 
-  ## Parameters
-  - `image`: 2D list of numeric values representing the image
-  - `options`: Keyword list of options
-    - `:connectivity`: `:queen` (8-connectivity, default) or `:rook` (4-connectivity)
+   ## Parameters
+   - `image`: 2D list of numeric values representing the image
+   - `options`: Keyword list of options
+     - `:connectivity`: `:queen` (8-connectivity, default) or `:rook` (4-connectivity)
 
-  ## Returns
-  A 2D list of maps, each containing:
-  - `:local_i`: Local Moran's I value for the pixel
-  - `:z_score`: Standardized z-score
-  - `:p_value`: Approximate p-value
-  - `:cluster_type`: Type of spatial cluster (:hh, :ll, :hl, :lh, or :ns)
- """
+   ## Returns
+   A 2D list of maps, each containing:
+   - `:local_i`: Local Moran's I value for the pixel
+   - `:z_score`: Standardized z-score
+   - `:p_value`: Approximate p-value
+   - `:cluster_type`: Type of spatial cluster (:hh, :ll, :hl, :lh, or :ns)
+  """
   def local_morans_i(image, options \\ []) do
     connectivity = Keyword.get(options, :connectivity, :queen)
 
@@ -126,21 +129,23 @@ defmodule MoransI do
             acc + w_ij * Enum.at(deviations, j)
           end)
 
-        local_i = if variance > 0 do
-          dev_i * weighted_sum / variance
-        else
-          0.0
-        end
+        local_i =
+          if variance > 0 do
+            dev_i * weighted_sum / variance
+          else
+            0.0
+          end
 
         # Calculate z-score (simplified)
         expected_local = -1.0 / (n - 1)
         local_variance = calculate_local_variance(i, weights, variance)
 
-        z_score = if local_variance > 0 do
-          (local_i - expected_local) / :math.sqrt(local_variance)
-        else
-          0.0
-        end
+        z_score =
+          if local_variance > 0 do
+            (local_i - expected_local) / :math.sqrt(local_variance)
+          else
+            0.0
+          end
 
         # Approximate p-value
         p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
@@ -184,14 +189,15 @@ defmodule MoransI do
   defp build_weights_matrix(coords, connectivity) do
     n = length(coords)
 
-    for i <- 0..(n-1) do
+    for i <- 0..(n - 1) do
       {row_i, col_i} = Enum.at(coords, i)
 
-      for j <- 0..(n-1) do
+      for j <- 0..(n - 1) do
         if i == j do
           0.0
         else
           {row_j, col_j} = Enum.at(coords, j)
+
           if are_neighbors({row_i, col_i}, {row_j, col_j}, connectivity) do
             1.0
           else
@@ -208,14 +214,14 @@ defmodule MoransI do
 
     case connectivity do
       :rook -> (row_diff == 1 and col_diff == 0) or (row_diff == 0 and col_diff == 1)
-      :queen -> row_diff <= 1 and col_diff <= 1 and (row_diff + col_diff) > 0
+      :queen -> row_diff <= 1 and col_diff <= 1 and row_diff + col_diff > 0
     end
   end
 
   defp calculate_numerator(deviations, weights) do
     n = length(deviations)
 
-    for i <- 0..(n-1), j <- 0..(n-1), reduce: 0.0 do
+    for i <- 0..(n - 1), j <- 0..(n - 1), reduce: 0.0 do
       acc ->
         w_ij = weights |> Enum.at(i) |> Enum.at(j)
         dev_i = Enum.at(deviations, i)
@@ -248,6 +254,7 @@ defmodule MoransI do
 
   defp calculate_sample_variance(values, mean) do
     n = length(values)
+
     if n > 1 do
       sum_sq_dev = values |> Enum.map(&((&1 - mean) * (&1 - mean))) |> Enum.sum()
       sum_sq_dev / (n - 1)
@@ -283,13 +290,18 @@ defmodule MoransI do
       high_neighbors = neighbor_mean > global_mean
 
       case {high_value, high_neighbors} do
-        {true, true} -> :hh    # High-High cluster
-        {false, false} -> :ll  # Low-Low cluster
-        {true, false} -> :hl   # High-Low outlier
-        {false, true} -> :lh   # Low-High outlier
+        # High-High cluster
+        {true, true} -> :hh
+        # Low-Low cluster
+        {false, false} -> :ll
+        # High-Low outlier
+        {true, false} -> :hl
+        # Low-High outlier
+        {false, true} -> :lh
       end
     else
-      :ns  # Not significant
+      # Not significant
+      :ns
     end
   end
 
