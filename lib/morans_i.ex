@@ -321,8 +321,6 @@ defmodule MoransI do
       # Local variance formula components
       # E[Ii²] under null hypothesis
       term1 = w_i_sq_sum * (n - b2) / (n - 1)
-
-      # (E[Ii])² under null hypothesis
       term2 = w_i_sum * w_i_sum * (2 * b2 - n) / ((n - 1) * (n - 2))
 
       # Additional correction term for finite sample
