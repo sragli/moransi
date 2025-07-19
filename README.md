@@ -89,9 +89,11 @@ Moran's I measures the degree of spatial clustering or dispersion of these attri
     * Create a spatial weights matrix (W) that quantifies the relationships between points based on the chosen method.
 * Normalize Attribute Values: Standardize attribute values to have a mean of zero and a standard deviation of one. This normalization is crucial for Moran's I computation.
 * Compute Moran's I: Use the formula for Moran's I to calculate the spatial autocorrelation:
+
 $$
 I = \frac{n}{\sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} \cdot \frac{ \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} (x_i - \bar{x})(x_j - \bar{x}) }{ \sum_{i=1}^{n} (x_i - \bar{x})^2 }}
 $$
+
   * where:
     * n is the number of points
     * $x_i$​ and $x_j$​ are the standardized attribute values at points i and j respectively
@@ -100,7 +102,7 @@ $$
 
 * Interpret Moran's I: Moran's I ranges from -1 (perfect dispersion) to +1 (perfect clustering). Values close to 0 indicate spatial randomness. The interpretation is context-dependent, the actual value is less important than the statistical significance of the result. Apart from statistical significance, consider the practical significance of your findings. In some cases, even a moderate level of spatial autocorrelation could have important implications for your research question.
 * Test for Significance:
-  * The significance of Moran's I is tested using its Z-score. If the Z-score falls within the critical range of a standard normal distribution (e.g., beyond $+-$1.96 for a 95% confidence level), the null hypothesis of spatial randomness can be rejected.
+  * The significance of Moran's I is tested using its Z-score. If the Z-score falls within the critical range of a standard normal distribution (e.g., beyond ±$1.96 for a 95% confidence level), the null hypothesis of spatial randomness can be rejected.
   * Use of Permutation Tests: An alternative and often more robust approach is to use permutation tests. This involves randomly permuting the spatial locations of the values many times (e.g., 999 permutations) and recalculating Moran's I for each permutation. This creates a reference distribution against which the observed Moran's I can be compared.
 
   ### Reporting Moran's I
