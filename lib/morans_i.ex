@@ -55,12 +55,7 @@ defmodule MoransI do
 
     variance = calculate_variance(n, weights)
 
-    z_score =
-      if variance > 0 do
-        (morans_i - expected_i) / :math.sqrt(variance)
-      else
-        0.0
-      end
+    z_score = z_score(variance, expected_i, morans_i)
 
     # Approximate p-value (two-tailed)
     p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
@@ -128,12 +123,7 @@ defmodule MoransI do
         expected_local = -1.0 / (n - 1)
         local_variance = calculate_local_variance(i, weights)
 
-        z_score =
-          if local_variance > 0 do
-            (local_i - expected_local) / :math.sqrt(local_variance)
-          else
-            0.0
-          end
+        z_score = z_score(local_variance, expected_local, local_i)
 
         # Approximate p-value
         p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
@@ -332,19 +322,17 @@ defmodule MoransI do
     end
   end
 
-  defp calculate_sample_variance(values, mean) do
-    n = length(values)
+  defp calculate_sample_variance(values, mean) when length(values) > 1 do
+    sum_sq_dev =
+      values
+      |> Enum.map(&((&1 - mean) * (&1 - mean)))
+      |> Enum.sum()
 
-    if n > 1 do
-      sum_sq_dev =
-        values
-        |> Enum.map(&((&1 - mean) * (&1 - mean)))
-        |> Enum.sum()
+    sum_sq_dev / (length(values) - 1)
+  end
 
-      sum_sq_dev / (n - 1)
-    else
-      0.0
-    end
+  defp calculate_sample_variance(_values, _mean) do
+    0.0
   end
 
   defp calculate_neighbor_mean(i, values, weights) do
@@ -388,6 +376,11 @@ defmodule MoransI do
       {false, true} -> :lh
     end
   end
+
+  defp z_score(variance, expected_i, i) when variance > 0,
+    do: (i - expected_i) / :math.sqrt(variance)
+
+  defp z_score(_variance, _expected_i, _i), do: 0.0
 
   defp standard_normal_cdf(z) do
     # Approximation of standard normal CDF
