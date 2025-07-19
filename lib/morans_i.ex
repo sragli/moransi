@@ -26,16 +26,14 @@ defmodule MoransI do
     {values, coords} = image_to_flat_data(image)
     n = length(values)
 
-    # Calculate mean
     mean = Enum.sum(values) / n
 
-    # Calculate deviations from mean
     deviations = Enum.map(values, &(&1 - mean))
 
-    # Build spatial weights matrix
+    # Spatial weights matrix
     weights = build_weights_matrix(coords, connectivity)
 
-    # Calculate Moran's I components
+    # Moran's I components
     numerator = calculate_numerator(deviations, weights)
     denominator = calculate_denominator(deviations)
 
@@ -55,7 +53,6 @@ defmodule MoransI do
     # Expected value under null hypothesis
     expected_i = -1.0 / (n - 1)
 
-    # Calculate variance and z-score
     variance = calculate_variance(n, weights)
 
     z_score =
@@ -99,24 +96,21 @@ defmodule MoransI do
     {values, coords} = image_to_flat_data(image)
     n = length(values)
 
-    # Calculate mean and variance
     mean = Enum.sum(values) / n
     variance = calculate_sample_variance(values, mean)
 
-    # Calculate deviations from mean
     deviations = Enum.map(values, &(&1 - mean))
 
-    # Build spatial weights matrix
+    # Spatial weights matrix
     weights = build_weights_matrix(coords, connectivity)
 
-    # Calculate local Moran's I for each pixel
+    # Local Moran's I for each pixel
     local_results =
       Enum.with_index(deviations)
       |> Enum.map(fn {dev_i, i} ->
         # Get neighbors for pixel i
         neighbors = Enum.at(weights, i)
 
-        # Calculate local Moran's I
         weighted_sum =
           neighbors
           |> Enum.with_index()
@@ -131,7 +125,6 @@ defmodule MoransI do
             0.0
           end
 
-        # Calculate z-score
         expected_local = -1.0 / (n - 1)
         local_variance = calculate_local_variance(i, weights)
 
@@ -245,10 +238,10 @@ defmodule MoransI do
     if w_sum == 0 do
       0.0
     else
-      # Calculate S0 (sum of all weights)
+      # S0 (sum of all weights)
       s0 = w_sum
 
-      # Calculate S1 (sum of squared weights, considering symmetry)
+      # S1 (sum of squared weights, considering symmetry)
       s1 =
         for i <- 0..(n - 1), j <- 0..(n - 1), i != j, reduce: 0.0 do
           acc ->
@@ -259,7 +252,7 @@ defmodule MoransI do
 
       s1 = s1 / 2.0
 
-      # Calculate S2 (sum of squared row and column sums)
+      # S2 (sum of squared row and column sums)
       row_sums = weights |> Enum.map(&Enum.sum/1)
 
       col_sums =
@@ -274,7 +267,7 @@ defmodule MoransI do
         Enum.sum(Enum.map(row_sums, &(&1 * &1))) +
           Enum.sum(Enum.map(col_sums, &(&1 * &1)))
 
-      # Calculate b2 (Kurtosis measure)
+      # b2 (Kurtosis measure)
       # Assuming normal distribution (b2 = 3), but this should ideally be calculated from the actual data
       b2 = 3.0
 
@@ -315,7 +308,7 @@ defmodule MoransI do
       # Sum of squared weights for observation i
       w_i_sq_sum = w_i |> Enum.map(&(&1 * &1)) |> Enum.sum()
 
-      # b2 (kurtosis) - assuming normal distribution for now
+      # b2 (Kurtosis) - assuming normal distribution for now
       b2 = 3.0
 
       # Local variance formula components
@@ -375,24 +368,24 @@ defmodule MoransI do
     end
   end
 
-  defp classify_cluster(value, neighbor_mean, global_mean, significant?) do
-    if significant? do
-      high_value = value > global_mean
-      high_neighbors = neighbor_mean > global_mean
+  defp classify_cluster(_value, _neighbor_mean, _global_mean, _significant = false) do
+    # Not significant
+    :ns
+  end
 
-      case {high_value, high_neighbors} do
-        # High-High cluster
-        {true, true} -> :hh
-        # Low-Low cluster
-        {false, false} -> :ll
-        # High-Low outlier
-        {true, false} -> :hl
-        # Low-High outlier
-        {false, true} -> :lh
-      end
-    else
-      # Not significant
-      :ns
+  defp classify_cluster(value, neighbor_mean, global_mean, _significant = true) do
+    high_value = value > global_mean
+    high_neighbors = neighbor_mean > global_mean
+
+    case {high_value, high_neighbors} do
+      # High-High cluster
+      {true, true} -> :hh
+      # Low-Low cluster
+      {false, false} -> :ll
+      # High-Low outlier
+      {true, false} -> :hl
+      # Low-High outlier
+      {false, true} -> :lh
     end
   end
 
