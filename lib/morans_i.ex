@@ -47,7 +47,11 @@ defmodule MoransI do
     # Calculate Moran's I components
     numerator = calculate_numerator(deviations, weights)
     denominator = calculate_denominator(deviations)
-    w_sum = weights |> List.flatten() |> Enum.sum()
+
+    w_sum =
+      weights
+      |> List.flatten()
+      |> Enum.sum()
 
     # Moran's I statistic
     morans_i =
@@ -223,7 +227,11 @@ defmodule MoransI do
 
     for i <- 0..(n - 1), j <- 0..(n - 1), reduce: 0.0 do
       acc ->
-        w_ij = weights |> Enum.at(i) |> Enum.at(j)
+        w_ij =
+          weights
+          |> Enum.at(i)
+          |> Enum.at(j)
+
         dev_i = Enum.at(deviations, i)
         dev_j = Enum.at(deviations, j)
         acc + w_ij * dev_i * dev_j
@@ -238,7 +246,10 @@ defmodule MoransI do
 
   defp calculate_variance(n, weights) do
     # Simplified variance calculation
-    w_sum = weights |> List.flatten() |> Enum.sum()
+    w_sum =
+      weights
+      |> List.flatten()
+      |> Enum.sum()
 
     if w_sum > 0 do
       2.0 / ((n - 1) * w_sum)
@@ -256,7 +267,11 @@ defmodule MoransI do
     n = length(values)
 
     if n > 1 do
-      sum_sq_dev = values |> Enum.map(&((&1 - mean) * (&1 - mean))) |> Enum.sum()
+      sum_sq_dev =
+        values
+        |> Enum.map(&((&1 - mean) * (&1 - mean)))
+        |> Enum.sum()
+
       sum_sq_dev / (n - 1)
     else
       0.0
