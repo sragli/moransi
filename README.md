@@ -34,9 +34,10 @@ end
   * S1: Sum of squared weights considering symmetry
   * S2: Sum of squared row and column sums of the weights matrix
 * Correct variance formula: Uses the standard variance formula for Moran's I under the normality assumption:
-```
-  Var(I) = [n((n²-3n+3)S1 - nS2 + 3S0²) - b2((n²-n)S1 - 2nS2 + 6S0²)] / [(n-1)(n-2)(n-3)S0²]
-```
+
+$$
+  Var(I) = \frac{n((n²-3n+3)S1 - nS2 + 3S0²) - b2((n²-n)S1 - 2nS2 + 6S0²)}{(n-1)(n-2)(n-3)S0²}
+$$
 
 ### Interpretation
 
@@ -57,8 +58,8 @@ Statistical Significance: Z-scores and p-values help determine if observed patte
 
 ## Main Functions
 
-* global_morans_i/2: Computes global Moran's I with statistical significance
-* local_morans_i/2: Computes local Moran's I for each pixel
+* *global_morans_i/2*: Computes global Moran's I with statistical significance
+* *local_morans_i/2*: Computes local Moran's I for each pixel
 
 ## Usage
 
@@ -81,12 +82,11 @@ Moran's I measures the degree of spatial clustering or dispersion of these attri
 
 * Define Attribute Values: Assign attribute values (e.g., population density, temperature, elevation) to each point in the point cloud dataset.
 * Null Hypothesis: The null hypothesis for Moran's I is typically that the variable exhibits a random spatial pattern, meaning there is no spatial autocorrelation.
-* Determine the Expected Value and Variance of Moran's I: Under the null hypothesis, calculate the expected value and variance of Moran's I. The expected value of Moran's I under the null hypothesis of spatial randomness is typically close to -1/(n-1), where n is the number of spatial units.
-* Compute Spatial Weights Matrix: Define spatial relationships between points.
-  * Common approaches include:
-    * Distance-based weights (e.g., inverse distance, nearest neighbors).
-    * K-nearest neighbors, distance bands, or other neighborhood definitions based on spatial proximity.
-    * Create a spatial weights matrix (W) that quantifies the relationships between points based on the chosen method.
+* Determine the Expected Value and Variance of Moran's I: Under the null hypothesis, calculate the expected value and variance of Moran's I. The expected value of Moran's I under the null hypothesis of spatial randomness is typically close to $-1/(n-1)$, where n is the number of spatial units.
+* Compute Spatial Weights Matrix: Define spatial relationships between points. Common approaches include:
+  * Distance-based weights (e.g., inverse distance, nearest neighbors).
+  * K-nearest neighbors, distance bands, or other neighborhood definitions based on spatial proximity.
+  * Create a spatial weights matrix (W) that quantifies the relationships between points based on the chosen method.
 * Normalize Attribute Values: Standardize attribute values to have a mean of zero and a standard deviation of one. This normalization is crucial for Moran's I computation.
 * Compute Moran's I: Use the formula for Moran's I to calculate the spatial autocorrelation:
 
