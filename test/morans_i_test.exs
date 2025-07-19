@@ -7,9 +7,9 @@ defmodule MoransITest do
     assert %{
              morans_i: 0.386663,
              expected_i: -0.041667,
-             variance: 5.79e-4,
-             z_score: 17.805334,
-             p_value: 0.0
+             variance: 0.015006,
+             z_score: 3.496612,
+             p_value: 4.59e-4
            } = MoransI.global_morans_i(image)
   end
 
@@ -18,179 +18,53 @@ defmodule MoransITest do
 
     assert [
              [
-               %{
-                 z_score: 52.953871,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 2.658462
-               },
-               %{
-                 z_score: 15.299573,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 0.738462
-               },
-               %{
-                 z_score: 24.351087,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 1.2
-               },
-               %{
-                 z_score: 102.797541,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 5.2
-               },
-               %{
-                 z_score: 62.005385,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 3.12
-               }
+               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.082845, z_score: 1.734064},
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702},
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314},
+               %{cluster_type: :ll, local_i: 5.2, p_value: 0.006206, z_score: 2.732622},
+               %{cluster_type: :ll, local_i: 3.12, p_value: 0.042193, z_score: 2.030471}
              ],
              [
-               %{
-                 z_score: 15.299573,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 0.738462
-               },
-               %{
-                 z_score: -4.975818,
-                 p_value: 1.0e-6,
-                 cluster_type: :hl,
-                 local_i: -0.295385
-               },
-               %{
-                 z_score: 7.092867,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 0.32
-               },
-               %{
-                 z_score: 46.316094,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 2.32
-               },
-               %{
-                 z_score: 24.351087,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 1.2
-               }
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702},
+               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.909835, z_score: -0.113247},
+               %{cluster_type: :ns, local_i: 0.32, p_value: 0.871755, z_score: 0.161431},
+               %{cluster_type: :ns, local_i: 2.32, p_value: 0.291905, z_score: 1.054134},
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314}
              ],
              [
-               %{
-                 z_score: 24.351087,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 1.2
-               },
-               %{
-                 z_score: 7.092867,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 0.32
-               },
-               %{
-                 z_score: -4.975818,
-                 p_value: 1.0e-6,
-                 cluster_type: :hl,
-                 local_i: -0.295385
-               },
-               %{
-                 z_score: 31.230237,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 1.550769
-               },
-               %{
-                 z_score: 15.299573,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 0.738462
-               }
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314},
+               %{cluster_type: :ns, local_i: 0.32, p_value: 0.871755, z_score: 0.161431},
+               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.909835, z_score: -0.113247},
+               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.477275, z_score: 0.710787},
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702}
              ],
              [
-               %{
-                 z_score: 102.797541,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 5.2
-               },
-               %{
-                 z_score: 46.316094,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 2.32
-               },
-               %{
-                 z_score: 31.230237,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 1.550769
-               },
-               %{
-                 z_score: 139.848405,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 7.089231
-               },
-               %{
-                 z_score: 87.711684,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 4.430769
-               }
+               %{cluster_type: :ll, local_i: 5.2, p_value: 0.006206, z_score: 2.732622},
+               %{cluster_type: :ns, local_i: 2.32, p_value: 0.291905, z_score: 1.054134},
+               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.477275, z_score: 0.710787},
+               %{cluster_type: :hh, local_i: 7.089231, p_value: 0.001428, z_score: 3.18289},
+               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.019601, z_score: 2.331601}
              ],
              [
-               %{
-                 z_score: 62.005385,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 3.12
-               },
-               %{
-                 z_score: 24.351087,
-                 p_value: 0.0,
-                 cluster_type: :ll,
-                 local_i: 1.2
-               },
-               %{
-                 z_score: 15.299573,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 0.738462
-               },
-               %{
-                 z_score: 87.711684,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 4.430769
-               },
-               %{
-                 z_score: 52.953871,
-                 p_value: 0.0,
-                 cluster_type: :hh,
-                 local_i: 2.658462
-               }
+               %{cluster_type: :ll, local_i: 3.12, p_value: 0.042193, z_score: 2.030471},
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314},
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702},
+               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.019601, z_score: 2.331601},
+               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.082845, z_score: 1.734064}
              ]
            ] = MoransI.local_morans_i(image)
   end
 
-  """
-  Create a simple test image with spatial patterns for demonstration.
-
-  ## Parameters
-  - Type of pattern (`:clustered`, `:random`, `:dispersed`)
-  - `size`: Size of the square image
-
-  ## Returns
-  A 2D list representing the test image.
-  """
-
+  #
+  # Create a simple test image with spatial patterns for demonstration.
+  #
+  ### Parameters
+  # - Type of pattern (`:clustered`, `:random`, `:dispersed`)
+  # - `size`: Size of the square image
+  #
+  ### Returns
+  # A 2D list representing the test image.
+  #
   defp create_test_image(:clustered, size) do
     for i <- 0..(size - 1) do
       for j <- 0..(size - 1) do

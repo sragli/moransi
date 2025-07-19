@@ -1,15 +1,6 @@
 defmodule MoransI do
   @moduledoc """
   Compute Moran's I spatial autocorrelation index for image data.
-
-  Moran's I is a measure of spatial autocorrelation that indicates whether
-  nearby pixels in an image have similar values (positive autocorrelation),
-  dissimilar values (negative autocorrelation), or random spatial distribution.
-
-  Values range from -1 to 1:
-  - I > 0: Positive spatial autocorrelation (similar values cluster together)
-  - I = 0: Random spatial distribution
-  - I < 0: Negative spatial autocorrelation (dissimilar values cluster together)
   """
 
   @doc """
@@ -140,9 +131,9 @@ defmodule MoransI do
             0.0
           end
 
-        # Calculate z-score (simplified)
+        # Calculate z-score
         expected_local = -1.0 / (n - 1)
-        local_variance = calculate_local_variance(i, weights, variance)
+        local_variance = calculate_local_variance(i, weights)
 
         z_score =
           if local_variance > 0 do
@@ -244,23 +235,110 @@ defmodule MoransI do
     |> Enum.sum()
   end
 
+  #
+  # Variance calculation using the proper mathematical formula for Moran's I variance instead
+  # of the simplified approximation.
+  #
   defp calculate_variance(n, weights) do
-    # Simplified variance calculation
-    w_sum =
-      weights
-      |> List.flatten()
-      |> Enum.sum()
+    w_sum = weights |> List.flatten() |> Enum.sum()
 
-    if w_sum > 0 do
-      2.0 / ((n - 1) * w_sum)
-    else
+    if w_sum == 0 do
       0.0
+    else
+      # Calculate S0 (sum of all weights)
+      s0 = w_sum
+
+      # Calculate S1 (sum of squared weights, considering symmetry)
+      s1 =
+        for i <- 0..(n - 1), j <- 0..(n - 1), i != j, reduce: 0.0 do
+          acc ->
+            w_ij = weights |> Enum.at(i) |> Enum.at(j)
+            w_ji = weights |> Enum.at(j) |> Enum.at(i)
+            acc + (w_ij + w_ji) * (w_ij + w_ji)
+        end
+
+      s1 = s1 / 2.0
+
+      # Calculate S2 (sum of squared row and column sums)
+      row_sums = weights |> Enum.map(&Enum.sum/1)
+
+      col_sums =
+        for j <- 0..(n - 1) do
+          for i <- 0..(n - 1) do
+            weights |> Enum.at(i) |> Enum.at(j)
+          end
+          |> Enum.sum()
+        end
+
+      s2 =
+        Enum.sum(Enum.map(row_sums, &(&1 * &1))) +
+          Enum.sum(Enum.map(col_sums, &(&1 * &1)))
+
+      # Calculate b2 (Kurtosis measure)
+      # Assuming normal distribution (b2 = 3), but this should ideally be calculated from the actual data
+      b2 = 3.0
+
+      # Variance formula for Moran's I under normality assumption
+      # Var(I) = [n((n²-3n+3)S1 - nS2 + 3S0²) - b2((n²-n)S1 - 2nS2 + 6S0²)] / [(n-1)(n-2)(n-3)S0²]
+      numerator =
+        n * ((n * n - 3 * n + 3) * s1 - n * s2 + 3 * s0 * s0) -
+          b2 * ((n * n - n) * s1 - 2 * n * s2 + 6 * s0 * s0)
+
+      denominator = (n - 1) * (n - 2) * (n - 3) * s0 * s0
+
+      if denominator != 0 do
+        numerator / denominator
+      else
+        # Fallback to simpler approximation
+        2.0 / ((n - 1) * s0)
+      end
     end
   end
 
-  defp calculate_local_variance(_i, _weights, variance) do
-    # Simplified local variance calculation
-    variance / 100
+  #
+  # Local variance calculation using the actual mathematical formula for Local Indicators of Spatial
+  # Association (LISA) variance, based on the theoretical derivation of local Moran's I variance
+  # under the null hypothesis of no spatial autocorrelation.
+  #
+  defp calculate_local_variance(i, weights) do
+    n = length(weights)
+
+    # Weights for observation i
+    w_i = Enum.at(weights, i)
+
+    # Sum of weights for observation i
+    w_i_sum = Enum.sum(w_i)
+
+    if w_i_sum == 0 do
+      0.0
+    else
+      # Sum of squared weights for observation i
+      w_i_sq_sum = w_i |> Enum.map(&(&1 * &1)) |> Enum.sum()
+
+      # b2 (kurtosis) - assuming normal distribution for now
+      b2 = 3.0
+
+      # Local variance formula components
+      # E[Ii²] under null hypothesis
+      term1 = w_i_sq_sum * (n - b2) / (n - 1)
+
+      # (E[Ii])² under null hypothesis
+      term2 = w_i_sum * w_i_sum * (2 * b2 - n) / ((n - 1) * (n - 2))
+
+      # Additional correction term for finite sample
+      correction =
+        if n > 3 do
+          w_i_sum * w_i_sum / ((n - 1) * (n - 1))
+        else
+          0.0
+        end
+
+      # Combine terms for local variance
+      local_var = term1 + term2 - correction
+
+      # Ensure non-negative variance
+      max(0.0, local_var)
+    end
   end
 
   defp calculate_sample_variance(values, mean) do
