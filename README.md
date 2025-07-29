@@ -58,8 +58,8 @@ Statistical Significance: Z-scores and p-values help determine if observed patte
 
 ## Main Functions
 
-* *global_morans_i/2*: Computes global Moran's I with statistical significance
-* *local_morans_i/2*: Computes local Moran's I for each pixel
+* `global_morans_i/2`: Computes global Moran's I with statistical significance
+* `local_morans_i/2`: Computes local Moran's I for each pixel
 
 ## Usage
 
