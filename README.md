@@ -90,9 +90,9 @@ Moran's I measures the degree of spatial clustering or dispersion of these attri
 * Normalize Attribute Values: Standardize attribute values to have a mean of zero and a standard deviation of one. This normalization is crucial for Moran's I computation.
 * Compute Moran's I: Use the formula for Moran's I to calculate the spatial autocorrelation:
 
-  $$
-  I = \frac{n}{\sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} \cdot \frac{ \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} (x_i - \bar{x})(x_j - \bar{x}) }{ \sum_{i=1}^{n} (x_i - \bar{x})^2 }}
-  $$
+$$
+I = \frac{n}{\sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} \cdot \frac{ \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} (x_i - \bar{x})(x_j - \bar{x}) }{ \sum_{i=1}^{n} (x_i - \bar{x})^2 }}
+$$
 
   where:
   * n is the number of points
