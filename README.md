@@ -90,15 +90,15 @@ Moran's I measures the degree of spatial clustering or dispersion of these attri
 * Normalize Attribute Values: Standardize attribute values to have a mean of zero and a standard deviation of one. This normalization is crucial for Moran's I computation.
 * Compute Moran's I: Use the formula for Moran's I to calculate the spatial autocorrelation:
 
-$$
-I = \frac{n}{\sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} \cdot \frac{ \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} (x_i - \bar{x})(x_j - \bar{x}) }{ \sum_{i=1}^{n} (x_i - \bar{x})^2 }}
-$$
+  $$
+  I = \frac{n}{\sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} \cdot \frac{ \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} (x_i - \bar{x})(x_j - \bar{x}) }{ \sum_{i=1}^{n} (x_i - \bar{x})^2 }}
+  $$
 
-    where:
-    * n is the number of points
-    * $x_i$​ and $x_j$​ are the standardized attribute values at points i and j respectively
-    * $\bar{x}$ is the mean of standardized attribute values
-    * $w_{ij}$​ represents the spatial weight between points i and j.
+  where:
+  * n is the number of points
+  * $x_i$​ and $x_j$​ are the standardized attribute values at points i and j respectively
+  * $\bar{x}$ is the mean of standardized attribute values
+  * $w_{ij}$​ represents the spatial weight between points i and j.
 
 * Interpret Moran's I: Moran's I ranges from -1 (perfect dispersion) to +1 (perfect clustering). Values close to 0 indicate spatial randomness. The interpretation is context-dependent, the actual value is less important than the statistical significance of the result. Apart from statistical significance, consider the practical significance of your findings. In some cases, even a moderate level of spatial autocorrelation could have important implications for your research question.
 * Test for Significance:
