@@ -94,7 +94,7 @@ $$
 I = \frac{n}{\sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} \cdot \frac{ \sum_{i=1}^{n} \sum_{j=1}^{n} w_{ij} (x_i - \bar{x})(x_j - \bar{x}) }{ \sum_{i=1}^{n} (x_i - \bar{x})^2 }}
 $$
 
-  * where:
+    where:
     * n is the number of points
     * $x_i$​ and $x_j$​ are the standardized attribute values at points i and j respectively
     * $\bar{x}$ is the mean of standardized attribute values
