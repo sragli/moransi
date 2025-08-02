@@ -1,6 +1,9 @@
 defmodule MoransI do
   @moduledoc """
-  Compute Moran's I spatial autocorrelation index for image data.
+  Optimized computation of Moran's I spatial autocorrelation index for image data.
+
+  Uses sparse neighbor representations and efficient data structures to handle large
+  images with O(n) memory complexity instead of O(n²).
   """
 
   @doc """
@@ -10,6 +13,7 @@ defmodule MoransI do
   - `image`: 2D list of numeric values representing the image
   - `options`: Keyword list of options
     - `:connectivity`: `:queen` (8-connectivity, default) or `:rook` (4-connectivity)
+    - `:parallel`: boolean, whether to use parallel processing (default: true)
 
   ## Returns
   A map containing:
@@ -22,27 +26,20 @@ defmodule MoransI do
   def global_morans_i(image, options \\ []) do
     connectivity = Keyword.get(options, :connectivity, :queen)
 
-    # Convert to flat lists with coordinates
-    {values, coords} = image_to_flat_data(image)
-    n = length(values)
+    # Convert to efficient data structures
+    {values_array, coords_map, rows, cols} = prepare_image_data(image)
+    n = :array.size(values_array)
 
-    mean = Enum.sum(values) / n
+    values_list = :array.to_list(values_array)
+    mean = Enum.sum(values_list) / n
+    deviations_array = :array.map(fn _i, val -> val - mean end, values_array)
 
-    deviations = Enum.map(values, &(&1 - mean))
+    # Neighbor mapping (sparse representation)
+    neighbors_map = build_neighbor_map(coords_map, rows, cols, connectivity)
 
-    # Spatial weights matrix
-    weights = build_weights_matrix(coords, connectivity)
+    {numerator, w_sum} = calculate_global_components(deviations_array, neighbors_map)
+    denominator = calculate_denominator(deviations_array)
 
-    # Moran's I components
-    numerator = calculate_numerator(deviations, weights)
-    denominator = calculate_denominator(deviations)
-
-    w_sum =
-      weights
-      |> List.flatten()
-      |> Enum.sum()
-
-    # Moran's I statistic
     morans_i =
       if w_sum > 0 and denominator > 0 do
         n / w_sum * (numerator / denominator)
@@ -50,14 +47,10 @@ defmodule MoransI do
         0.0
       end
 
-    # Expected value under null hypothesis
     expected_i = -1.0 / (n - 1)
-
-    variance = calculate_variance(n, weights)
+    variance = calculate_variance(n, neighbors_map, w_sum)
 
     z_score = z_score(variance, expected_i, morans_i)
-
-    # Approximate p-value (two-tailed)
     p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
 
     %{
@@ -70,298 +63,293 @@ defmodule MoransI do
   end
 
   @doc """
-   Compute local Moran's I (LISA - Local Indicators of Spatial Association) for each pixel.
+  Compute local Moran's I (LISA - Local Indicators of Spatial Association) for each pixel.
 
-   ## Parameters
-   - `image`: 2D list of numeric values representing the image
-   - `options`: Keyword list of options
-     - `:connectivity`: `:queen` (8-connectivity, default) or `:rook` (4-connectivity)
+  ## Parameters
+  - `image`: 2D list of numeric values representing the image
+  - `options`: Keyword list of options
+    - `:connectivity`: `:queen` (8-connectivity, default) or `:rook` (4-connectivity)
+    - `:parallel`: boolean, whether to use parallel processing (default: true)
+    - `:chunk_size`: integer, size of chunks for parallel processing (default: 1000)
 
-   ## Returns
-   A 2D list of maps, each containing:
-   - `:local_i`: Local Moran's I value for the pixel
-   - `:z_score`: Standardized z-score
-   - `:p_value`: Approximate p-value
-   - `:cluster_type`: Type of spatial cluster (:hh, :ll, :hl, :lh, or :ns)
+  ## Returns
+  A 2D list of maps, each containing:
+  - `:local_i`: Local Moran's I value for the pixel
+  - `:z_score`: Standardized z-score
+  - `:p_value`: Approximate p-value
+  - `:cluster_type`: Type of spatial cluster (:hh, :ll, :hl, :lh, or :ns)
   """
   def local_morans_i(image, options \\ []) do
     connectivity = Keyword.get(options, :connectivity, :queen)
+    parallel = Keyword.get(options, :parallel, true)
+    chunk_size = Keyword.get(options, :chunk_size, 1000)
 
-    # Convert to flat lists with coordinates
-    {values, coords} = image_to_flat_data(image)
-    n = length(values)
+    # Convert to efficient data structures
+    {values_array, coords_map, rows, cols} = prepare_image_data(image)
+    n = :array.size(values_array)
 
-    mean = Enum.sum(values) / n
-    variance = calculate_sample_variance(values, mean)
+    values_list = :array.to_list(values_array)
+    mean = Enum.sum(values_list) / n
+    variance = calculate_sample_variance(values_list, mean)
 
-    deviations = Enum.map(values, &(&1 - mean))
+    deviations_array = :array.map(fn _i, val -> val - mean end, values_array)
 
-    # Spatial weights matrix
-    weights = build_weights_matrix(coords, connectivity)
+    neighbors_map = build_neighbor_map(coords_map, rows, cols, connectivity)
 
-    # Local Moran's I for each pixel
+    # Calculate local Moran's I for each pixel
     local_results =
-      Enum.with_index(deviations)
-      |> Enum.map(fn {dev_i, i} ->
-        # Get neighbors for pixel i
-        neighbors = Enum.at(weights, i)
-
-        weighted_sum =
-          neighbors
-          |> Enum.with_index()
-          |> Enum.reduce(0, fn {w_ij, j}, acc ->
-            acc + w_ij * Enum.at(deviations, j)
-          end)
-
-        local_i =
-          if variance > 0 do
-            dev_i * weighted_sum / variance
-          else
-            0.0
-          end
-
-        expected_local = -1.0 / (n - 1)
-        local_variance = calculate_local_variance(i, weights)
-
-        z_score = z_score(local_variance, expected_local, local_i)
-
-        # Approximate p-value
-        p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
-
-        # Determine cluster type
-        value_i = Enum.at(values, i)
-        neighbor_mean = calculate_neighbor_mean(i, values, weights)
-        cluster_type = classify_cluster(value_i, neighbor_mean, mean, p_value < 0.05)
-
-        %{
-          local_i: Float.round(local_i, 6),
-          z_score: Float.round(z_score, 6),
-          p_value: Float.round(p_value, 6),
-          cluster_type: cluster_type
-        }
-      end)
+      if parallel and n > chunk_size do
+        calculate_local_parallel(
+          values_array,
+          deviations_array,
+          neighbors_map,
+          mean,
+          variance,
+          n,
+          chunk_size
+        )
+      else
+        calculate_local_sequential(
+          values_array,
+          deviations_array,
+          neighbors_map,
+          mean,
+          variance,
+          n
+        )
+      end
 
     # Convert back to 2D structure
-    cols = length(hd(image))
-
     local_results
     |> Enum.chunk_every(cols)
   end
 
-  defp image_to_flat_data(image) do
+  defp prepare_image_data(image) do
+    rows = length(image)
+    cols = length(hd(image))
+
+    # Flat arrays and coordinate mappings
     {values, coords} =
       image
       |> Enum.with_index()
       |> Enum.flat_map(fn {row, i} ->
         row
         |> Enum.with_index()
-        |> Enum.map(fn {value, j} ->
-          {value, {i, j}}
-        end)
+        |> Enum.map(fn {value, j} -> {value, {i, j}} end)
       end)
       |> Enum.unzip()
 
-    {values, coords}
+    values_array = :array.from_list(values)
+
+    coords_map =
+      coords
+      |> Enum.with_index()
+      |> Map.new(fn {coord, idx} -> {idx, coord} end)
+
+    {values_array, coords_map, rows, cols}
   end
 
-  defp build_weights_matrix(coords, connectivity) do
-    n = length(coords)
+  # Build sparse neighbor representation - O(n) instead of O(n²)
+  defp build_neighbor_map(coords_map, rows, cols, connectivity) do
+    coords_map
+    |> Enum.map(fn {idx, {row, col}} ->
+      neighbors = get_neighbors_efficient(row, col, rows, cols, connectivity)
 
-    for i <- 0..(n - 1) do
-      {row_i, col_i} = Enum.at(coords, i)
+      neighbor_indices =
+        neighbors
+        |> Enum.map(fn coord ->
+          Enum.find_value(coords_map, fn {i, c} -> if c == coord, do: i end)
+        end)
+        |> Enum.reject(&is_nil/1)
 
-      for j <- 0..(n - 1) do
-        if i == j do
-          0.0
-        else
-          {row_j, col_j} = Enum.at(coords, j)
-
-          if neighbors?({row_i, col_i}, {row_j, col_j}, connectivity) do
-            1.0
-          else
-            0.0
-          end
-        end
-      end
-    end
+      {idx, neighbor_indices}
+    end)
+    |> Map.new()
   end
 
-  defp neighbors?({r1, c1}, {r2, c2}, connectivity) do
-    row_diff = abs(r1 - r2)
-    col_diff = abs(c1 - c2)
-
+  # Direct coordinate calculation - much faster than distance checking
+  defp get_neighbors_efficient(row, col, max_rows, max_cols, connectivity) do
     case connectivity do
-      :rook -> (row_diff == 1 and col_diff == 0) or (row_diff == 0 and col_diff == 1)
-      :queen -> row_diff <= 1 and col_diff <= 1 and row_diff + col_diff > 0
+      :queen ->
+        for r <- max(0, row - 1)..min(max_rows - 1, row + 1),
+            c <- max(0, col - 1)..min(max_cols - 1, col + 1),
+            {r, c} != {row, col},
+            do: {r, c}
+
+      :rook ->
+        [{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}]
+        |> Enum.filter(fn {r, c} ->
+          r >= 0 and r < max_rows and c >= 0 and c < max_cols
+        end)
     end
   end
 
-  defp calculate_numerator(deviations, weights) do
-    n = length(deviations)
+  # Global calculation using sparse neighbors
+  defp calculate_global_components(deviations_array, neighbors_map) do
+    neighbors_map
+    |> Enum.reduce({0.0, 0}, fn {i, neighbors}, {num_acc, w_acc} ->
+      dev_i = :array.get(i, deviations_array)
 
-    for i <- 0..(n - 1), j <- 0..(n - 1), reduce: 0.0 do
-      acc ->
-        w_ij =
-          weights
-          |> Enum.at(i)
-          |> Enum.at(j)
+      {neighbor_sum, neighbor_count} =
+        neighbors
+        |> Enum.reduce({0.0, 0}, fn j, {sum, count} ->
+          dev_j = :array.get(j, deviations_array)
+          {sum + dev_j, count + 1}
+        end)
 
-        dev_i = Enum.at(deviations, i)
-        dev_j = Enum.at(deviations, j)
-        acc + w_ij * dev_i * dev_j
-    end
+      numerator_contrib = dev_i * neighbor_sum
+      {num_acc + numerator_contrib, w_acc + neighbor_count}
+    end)
   end
 
-  defp calculate_denominator(deviations) do
-    deviations
-    |> Enum.map(&(&1 * &1))
-    |> Enum.sum()
+  defp calculate_denominator(deviations_array) do
+    deviations_array
+    |> :array.to_list()
+    |> Enum.reduce(0.0, fn dev, acc -> acc + dev * dev end)
   end
 
-  #
-  # Variance calculation using the proper mathematical formula for Moran's I variance instead
-  # of the simplified approximation.
-  #
-  defp calculate_variance(n, weights) do
-    w_sum = weights |> List.flatten() |> Enum.sum()
+  defp calculate_variance(_n, _neighbors_map, 0), do: 0.0
 
-    if w_sum == 0 do
-      0.0
-    else
-      # S0 (sum of all weights)
-      s0 = w_sum
+  defp calculate_variance(n, neighbors_map, w_sum) do
+    s0 = w_sum
 
-      # S1 (sum of squared weights, considering symmetry)
-      s1 =
-        for i <- 0..(n - 1), j <- 0..(n - 1), i != j, reduce: 0.0 do
-          acc ->
-            w_ij = weights |> Enum.at(i) |> Enum.at(j)
-            w_ji = weights |> Enum.at(j) |> Enum.at(i)
-            acc + (w_ij + w_ji) * (w_ij + w_ji)
-        end
+    # S1: sum of squared weights (each neighbor relationship has weight 1)
+    # Each edge counted twice in undirected graph
+    s1 = 2 * w_sum
 
-      s1 = s1 / 2.0
+    # S2: sum of squared row and column sums
+    row_sums = neighbors_map |> Enum.map(fn {_i, neighbors} -> length(neighbors) end)
+    # Symmetric matrix
+    s2 = 2 * Enum.sum(Enum.map(row_sums, &(&1 * &1)))
 
-      # S2 (sum of squared row and column sums)
-      row_sums = weights |> Enum.map(&Enum.sum/1)
+    # Assuming normal distribution
+    b2 = 3.0
 
-      col_sums =
-        for j <- 0..(n - 1) do
-          for i <- 0..(n - 1) do
-            weights |> Enum.at(i) |> Enum.at(j)
-          end
-          |> Enum.sum()
-        end
+    numerator =
+      n * ((n * n - 3 * n + 3) * s1 - n * s2 + 3 * s0 * s0) -
+        b2 * ((n * n - n) * s1 - 2 * n * s2 + 6 * s0 * s0)
 
-      s2 =
-        Enum.sum(Enum.map(row_sums, &(&1 * &1))) +
-          Enum.sum(Enum.map(col_sums, &(&1 * &1)))
+    denominator = (n - 1) * (n - 2) * (n - 3) * s0 * s0
 
-      # b2 (Kurtosis measure)
-      # Assuming normal distribution (b2 = 3), but this should ideally be calculated from the actual data
-      b2 = 3.0
+    if denominator != 0, do: numerator / denominator, else: 2.0 / ((n - 1) * s0)
+  end
 
-      # Variance formula for Moran's I under normality assumption
-      # Var(I) = [n((n²-3n+3)S1 - nS2 + 3S0²) - b2((n²-n)S1 - 2nS2 + 6S0²)] / [(n-1)(n-2)(n-3)S0²]
-      numerator =
-        n * ((n * n - 3 * n + 3) * s1 - n * s2 + 3 * s0 * s0) -
-          b2 * ((n * n - n) * s1 - 2 * n * s2 + 6 * s0 * s0)
+  # Sequential local calculation
+  defp calculate_local_sequential(values_array, deviations_array, neighbors_map, mean, variance, n) do
+    0..(n - 1)
+    |> Enum.map(fn i ->
+      calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n)
+    end)
+  end
 
-      denominator = (n - 1) * (n - 2) * (n - 3) * s0 * s0
+  # Parallel local calculation
+  defp calculate_local_parallel(
+         values_array,
+         deviations_array,
+         neighbors_map,
+         mean,
+         variance,
+         n,
+         chunk_size
+       ) do
+    0..(n - 1)
+    |> Enum.chunk_every(chunk_size)
+    |> Task.async_stream(
+      fn chunk ->
+        Enum.map(chunk, fn i ->
+          calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n)
+        end)
+      end,
+      max_concurrency: System.schedulers_online()
+    )
+    |> Enum.flat_map(fn {:ok, results} -> results end)
+  end
 
-      if denominator != 0 do
-        numerator / denominator
+  # Calculate local Moran's I for a single pixel
+  defp calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n) do
+    dev_i = :array.get(i, deviations_array)
+    neighbors = Map.get(neighbors_map, i, [])
+
+    weighted_sum =
+      neighbors
+      |> Enum.reduce(0.0, fn j, acc ->
+        dev_j = :array.get(j, deviations_array)
+        # Weight is 1.0 for all neighbors
+        acc + dev_j
+      end)
+
+    local_i =
+      if variance > 0 do
+        dev_i * weighted_sum / variance
       else
-        # Fallback to simpler approximation
-        2.0 / ((n - 1) * s0)
+        0.0
       end
-    end
+
+    expected_local = -1.0 / (n - 1)
+    local_variance = calculate_local_variance(neighbors, n)
+
+    z_score = z_score(local_variance, expected_local, local_i)
+    p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
+
+    # Determine cluster type
+    value_i = :array.get(i, values_array)
+    neighbor_mean = calculate_neighbor_mean(neighbors, values_array)
+    cluster_type = classify_cluster(value_i, neighbor_mean, mean, p_value < 0.05)
+
+    %{
+      local_i: Float.round(local_i, 6),
+      z_score: Float.round(z_score, 6),
+      p_value: Float.round(p_value, 6),
+      cluster_type: cluster_type
+    }
   end
 
-  #
-  # Local variance calculation using the actual mathematical formula for Local Indicators of Spatial
-  # Association (LISA) variance, based on the theoretical derivation of local Moran's I variance
-  # under the null hypothesis of no spatial autocorrelation.
-  #
-  defp calculate_local_variance(i, weights) do
-    n = length(weights)
+  defp calculate_local_variance([], _n), do: 0.0
 
-    # Weights for observation i
-    w_i = Enum.at(weights, i)
+  defp calculate_local_variance(neighbors, n) do
+    w_i_sum = length(neighbors)
 
-    # Sum of weights for observation i
-    w_i_sum = Enum.sum(w_i)
+    # Each weight is 1.0, so sum of squares equals sum
+    w_i_sq_sum = w_i_sum
+    b2 = 3.0
 
-    if w_i_sum == 0 do
-      0.0
-    else
-      # Sum of squared weights for observation i
-      w_i_sq_sum = w_i |> Enum.map(&(&1 * &1)) |> Enum.sum()
+    term1 = w_i_sq_sum * (n - b2) / (n - 1)
+    term2 = w_i_sum * w_i_sum * (2 * b2 - n) / ((n - 1) * (n - 2))
 
-      # b2 (Kurtosis) - assuming normal distribution for now
-      b2 = 3.0
+    correction =
+      if n > 3 do
+        w_i_sum * w_i_sum / ((n - 1) * (n - 1))
+      else
+        0.0
+      end
 
-      # Local variance formula components
-      # E[Ii²] under null hypothesis
-      term1 = w_i_sq_sum * (n - b2) / (n - 1)
-      term2 = w_i_sum * w_i_sum * (2 * b2 - n) / ((n - 1) * (n - 2))
-
-      # Additional correction term for finite sample
-      correction =
-        if n > 3 do
-          w_i_sum * w_i_sum / ((n - 1) * (n - 1))
-        else
-          0.0
-        end
-
-      # Combine terms for local variance
-      local_var = term1 + term2 - correction
-
-      # Ensure non-negative variance
-      max(0.0, local_var)
-    end
+    local_var = term1 + term2 - correction
+    max(0.0, local_var)
   end
 
   defp calculate_sample_variance(values, mean) when length(values) > 1 do
     sum_sq_dev =
       values
-      |> Enum.map(&((&1 - mean) * (&1 - mean)))
-      |> Enum.sum()
+      |> Enum.reduce(0.0, fn val, acc ->
+        dev = val - mean
+        acc + dev * dev
+      end)
 
     sum_sq_dev / (length(values) - 1)
   end
 
-  defp calculate_sample_variance(_values, _mean) do
-    0.0
+  defp calculate_sample_variance(_values, _mean), do: 0.0
+
+  defp calculate_neighbor_mean([], _values_array), do: 0.0
+
+  defp calculate_neighbor_mean(neighbors, values_array) do
+    sum = neighbors |> Enum.reduce(0.0, fn j, acc -> acc + :array.get(j, values_array) end)
+    sum / length(neighbors)
   end
 
-  defp calculate_neighbor_mean(i, values, weights) do
-    neighbors = Enum.at(weights, i)
+  defp classify_cluster(_value, _neighbor_mean, _global_mean, false), do: :ns
 
-    {sum, count} =
-      neighbors
-      |> Enum.with_index()
-      |> Enum.reduce({0.0, 0}, fn {w_ij, j}, {acc_sum, acc_count} ->
-        if w_ij > 0 do
-          {acc_sum + Enum.at(values, j), acc_count + 1}
-        else
-          {acc_sum, acc_count}
-        end
-      end)
-
-    if count > 0 do
-      sum / count
-    else
-      0.0
-    end
-  end
-
-  defp classify_cluster(_value, _neighbor_mean, _global_mean, _significant = false) do
-    # Not significant
-    :ns
-  end
-
-  defp classify_cluster(value, neighbor_mean, global_mean, _significant = true) do
+  defp classify_cluster(value, neighbor_mean, global_mean, true) do
     high_value = value > global_mean
     high_neighbors = neighbor_mean > global_mean
 
@@ -377,13 +365,13 @@ defmodule MoransI do
     end
   end
 
-  defp z_score(variance, expected_i, i) when variance > 0,
-    do: (i - expected_i) / :math.sqrt(variance)
+  defp z_score(variance, expected_i, i) when variance > 0 do
+    (i - expected_i) / :math.sqrt(variance)
+  end
 
   defp z_score(_variance, _expected_i, _i), do: 0.0
 
   defp standard_normal_cdf(z) do
-    # Approximation of standard normal CDF
     0.5 * (1 + erf(z / :math.sqrt(2)))
   end
 
