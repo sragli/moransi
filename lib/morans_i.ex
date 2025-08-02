@@ -176,7 +176,7 @@ defmodule MoransI do
         else
           {row_j, col_j} = Enum.at(coords, j)
 
-          if are_neighbors({row_i, col_i}, {row_j, col_j}, connectivity) do
+          if neighbors?({row_i, col_i}, {row_j, col_j}, connectivity) do
             1.0
           else
             0.0
@@ -186,7 +186,7 @@ defmodule MoransI do
     end
   end
 
-  defp are_neighbors({r1, c1}, {r2, c2}, connectivity) do
+  defp neighbors?({r1, c1}, {r2, c2}, connectivity) do
     row_diff = abs(r1 - r2)
     col_diff = abs(c1 - c2)
 
