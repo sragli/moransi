@@ -64,14 +64,21 @@ Statistical Significance: Z-scores and p-values help determine if observed patte
 ## Usage
 
 ```elixir
-# Compute global Moran's I
-global_result = MoransI.global_morans_i(image)
+# Basic usage
+result = MoransI.global_morans_i(image)
 
-# Compute local Moran's I
-local_results = MoransI.local_morans_i(image)
+# With options
+local_results = MoransI.local_morans_i(image, 
+  connectivity: :rook,
+  parallel: true,
+  chunk_size: 2000
+)
 
-# Use different connectivity
-result = MoransI.global_morans_i(image, connectivity: :rook)
+# For very large images
+huge_image_results = MoransI.local_morans_i(huge_image,
+  parallel: true,
+  chunk_size: 5000  # Adjust based on available memory
+)
 ```
 
 ## How Moran's I Works
