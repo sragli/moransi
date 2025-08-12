@@ -1,9 +1,6 @@
 defmodule MoransI do
   @moduledoc """
-  Optimized computation of Moran's I spatial autocorrelation index for image data.
-
-  Uses sparse neighbor representations and efficient data structures to handle large
-  images with O(n) memory complexity instead of O(n²).
+  Moran's I spatial autocorrelation index for image data.
   """
 
   @doc """
@@ -153,7 +150,7 @@ defmodule MoransI do
   defp build_neighbor_map(coords_map, rows, cols, connectivity) do
     coords_map
     |> Enum.map(fn {idx, {row, col}} ->
-      neighbors = get_neighbors_efficient(row, col, rows, cols, connectivity)
+      neighbors = get_neighbors(row, col, rows, cols, connectivity)
 
       neighbor_indices =
         neighbors
@@ -168,7 +165,7 @@ defmodule MoransI do
   end
 
   # Direct coordinate calculation - much faster than distance checking
-  defp get_neighbors_efficient(row, col, max_rows, max_cols, connectivity) do
+  defp get_neighbors(row, col, max_rows, max_cols, connectivity) do
     case connectivity do
       :queen ->
         for r <- max(0, row - 1)..min(max_rows - 1, row + 1),

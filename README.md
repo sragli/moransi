@@ -1,6 +1,6 @@
 # MoransI
 
-Moran's I spatial autocorrelation index for images.
+Elixir module that implementa Moran's I spatial autocorrelation index for images.
 
 Moran's I is a measure of spatial autocorrelation that indicates whether nearby pixels in an image have similar values (positive autocorrelation),
 dissimilar values (negative autocorrelation), or random spatial distribution.
