@@ -165,20 +165,18 @@ defmodule MoransI do
   end
 
   # Direct coordinate calculation - much faster than distance checking
-  defp get_neighbors(row, col, max_rows, max_cols, connectivity) do
-    case connectivity do
-      :queen ->
-        for r <- max(0, row - 1)..min(max_rows - 1, row + 1),
-            c <- max(0, col - 1)..min(max_cols - 1, col + 1),
-            {r, c} != {row, col},
-            do: {r, c}
+  defp get_neighbors(row, col, max_rows, max_cols, :queen) do
+    for r <- max(0, row - 1)..min(max_rows - 1, row + 1),
+        c <- max(0, col - 1)..min(max_cols - 1, col + 1),
+        {r, c} != {row, col},
+        do: {r, c}
+  end
 
-      :rook ->
-        [{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}]
-        |> Enum.filter(fn {r, c} ->
-          r >= 0 and r < max_rows and c >= 0 and c < max_cols
-        end)
-    end
+  defp get_neighbors(row, col, max_rows, max_cols, :rook) do
+    [{row - 1, col}, {row + 1, col}, {row, col - 1}, {row, col + 1}]
+    |> Enum.filter(fn {r, c} ->
+      r >= 0 and r < max_rows and c >= 0 and c < max_cols
+    end)
   end
 
   # Global calculation using sparse neighbors

@@ -4,7 +4,7 @@ defmodule MoransI.MixProject do
   def project do
     [
       app: :moransi,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -37,7 +37,7 @@ defmodule MoransI.MixProject do
   defp docs() do
     [
       main: "MoransI",
-      extras: ["README.md", "LICENSE", "examples.livemd"]
+      extras: ["README.md", "LICENSE", "examples.livemd", "CHANGELOG"]
     ]
   end
 
