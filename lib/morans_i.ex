@@ -4,7 +4,7 @@ defmodule MoransI do
   """
 
   @doc """
-  Compute global Moran's I for an image using 8-connectivity (queen's case).
+  Compute global Moran's I for an image.
 
   ## Parameters
   - `image`: 2D list of numeric values representing the image
@@ -146,7 +146,7 @@ defmodule MoransI do
     {values_array, coords_map, rows, cols}
   end
 
-  # Build sparse neighbor representation - O(n) instead of O(n²)
+  # Build sparse neighbor representation
   defp build_neighbor_map(coords_map, rows, cols, connectivity) do
     coords_map
     |> Enum.map(fn {idx, {row, col}} ->
