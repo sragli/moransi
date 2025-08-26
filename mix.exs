@@ -23,7 +23,7 @@ defmodule MoransI.MixProject do
   end
 
   defp description() do
-    "Elixir module that implementa Moran's I spatial autocorrelation index for images."
+    "Elixir module that implements Moran's I spatial autocorrelation index for images."
   end
 
   defp package() do
