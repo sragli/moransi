@@ -4,7 +4,7 @@ defmodule MoransI.MixProject do
   def project do
     [
       app: :moransi,
-      version: "0.1.1",
+      version: "0.1.2",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -43,6 +43,7 @@ defmodule MoransI.MixProject do
 
   defp deps do
     [
+      {:nx, "~> 0.5"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end

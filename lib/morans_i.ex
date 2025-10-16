@@ -230,7 +230,14 @@ defmodule MoransI do
   end
 
   # Sequential local calculation
-  defp calculate_local_sequential(values_array, deviations_array, neighbors_map, mean, variance, n) do
+  defp calculate_local_sequential(
+         values_array,
+         deviations_array,
+         neighbors_map,
+         mean,
+         variance,
+         n
+       ) do
     0..(n - 1)
     |> Enum.map(fn i ->
       calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n)
