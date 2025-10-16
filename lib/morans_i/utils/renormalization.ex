@@ -1,4 +1,4 @@
-defmodule MoransI.Utils.Renormalization do
+defmodule MoransI.Utils.ImageTransform do
   @moduledoc """
   Coarse-graining using the sum of pixels in partition_size blocks, mean thresholding and output to a binary matrix.
   """
