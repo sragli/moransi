@@ -55,6 +55,50 @@ defmodule MoransITest do
            ] = MoransI.local_morans_i(image)
   end
 
+  test "global_morans_i returns zero for uniform image and valid keys" do
+    image = for _i <- 1..3, do: for(_j <- 1..3, do: 5)
+
+    res = MoransI.global_morans_i(image)
+
+    assert is_map(res)
+    assert Map.has_key?(res, :morans_i)
+    assert Map.has_key?(res, :p_value)
+    assert res.morans_i == 0.0
+    assert res.p_value >= 0.0 and res.p_value <= 1.0
+  end
+
+  test "global_morans_i raises on 1x1 image" do
+    image = [[1]]
+
+    assert_raise ArithmeticError, fn -> MoransI.global_morans_i(image) end
+  end
+
+  test "local_morans_i parallel and sequential produce same shape and valid entries" do
+    image = for i <- 0..2, do: for(j <- 0..2, do: if(i == 1 and j == 1, do: 10, else: 0))
+
+    seq = MoransI.local_morans_i(image, parallel: false)
+    par = MoransI.local_morans_i(image, parallel: true, chunk_size: 2)
+
+    assert length(seq) == length(par)
+    assert length(hd(seq)) == length(hd(par))
+
+    Enum.each(List.flatten(par), fn m ->
+      assert is_map(m)
+      assert Map.has_key?(m, :local_i)
+      assert Map.has_key?(m, :cluster_type)
+    end)
+  end
+
+  test "rook vs queen connectivity return morans_i floats" do
+    image = for i <- 0..2, do: for(j <- 0..2, do: if(i + j < 2, do: 1, else: 0))
+
+    r = MoransI.global_morans_i(image, connectivity: :rook)
+    q = MoransI.global_morans_i(image, connectivity: :queen)
+
+    assert is_float(r.morans_i)
+    assert is_float(q.morans_i)
+  end
+
   #
   # Create a simple test image with spatial patterns for demonstration.
   #
