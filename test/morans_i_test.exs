@@ -7,9 +7,9 @@ defmodule MoransITest do
     assert %{
              morans_i: 0.386663,
              expected_i: -0.041667,
-             variance: 0.015006,
-             z_score: 3.496612,
-             p_value: 4.59e-4
+             variance: 0.009829,
+             z_score: 4.320354,
+             p_value: 0.000015
            } = MoransI.global_morans_i(image)
   end
 
@@ -18,39 +18,39 @@ defmodule MoransITest do
 
     assert [
              [
-               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.082845, z_score: 1.734064},
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702},
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314},
-               %{cluster_type: :ll, local_i: 5.2, p_value: 0.006206, z_score: 2.732622},
-               %{cluster_type: :ll, local_i: 3.12, p_value: 0.042193, z_score: 2.030471}
+               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.073769, z_score: 1.787582},
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590},
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202},
+               %{cluster_type: :ll, local_i: 5.2, p_value: 0.004743, z_score: 2.819510},
+               %{cluster_type: :ll, local_i: 3.12, p_value: 0.037041, z_score: 2.083989}
              ],
              [
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702},
-               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.909835, z_score: -0.113247},
-               %{cluster_type: :ns, local_i: 0.32, p_value: 0.871755, z_score: 0.161431},
-               %{cluster_type: :ns, local_i: 2.32, p_value: 0.291905, z_score: 1.054134},
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314}
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590},
+               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.986486, z_score: 0.016938},
+               %{cluster_type: :ns, local_i: 0.32, p_value: 0.770587, z_score: 0.291617},
+               %{cluster_type: :ns, local_i: 2.32, p_value: 0.236359, z_score: 1.184320},
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202}
              ],
              [
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314},
-               %{cluster_type: :ns, local_i: 0.32, p_value: 0.871755, z_score: 0.161431},
-               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.909835, z_score: -0.113247},
-               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.477275, z_score: 0.710787},
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702}
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202},
+               %{cluster_type: :ns, local_i: 0.32, p_value: 0.770587, z_score: 0.291617},
+               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.986486, z_score: 0.016938},
+               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.400439, z_score: 0.840973},
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590}
              ],
              [
-               %{cluster_type: :ll, local_i: 5.2, p_value: 0.006206, z_score: 2.732622},
-               %{cluster_type: :ns, local_i: 2.32, p_value: 0.291905, z_score: 1.054134},
-               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.477275, z_score: 0.710787},
-               %{cluster_type: :hh, local_i: 7.089231, p_value: 0.001428, z_score: 3.18289},
-               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.019601, z_score: 2.331601}
+               %{cluster_type: :ll, local_i: 5.2, p_value: 0.004743, z_score: 2.819510},
+               %{cluster_type: :ns, local_i: 2.32, p_value: 0.236359, z_score: 1.184320},
+               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.400439, z_score: 0.840973},
+               %{cluster_type: :hh, local_i: 7.089231, p_value: 0.000902, z_score: 3.313076},
+               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.015471, z_score: 2.418489}
              ],
              [
-               %{cluster_type: :ll, local_i: 3.12, p_value: 0.042193, z_score: 2.030471},
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.517478, z_score: 0.647314},
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.684244, z_score: 0.406702},
-               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.019601, z_score: 2.331601},
-               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.082845, z_score: 1.734064}
+               %{cluster_type: :ll, local_i: 3.12, p_value: 0.037041, z_score: 2.083989},
+               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202},
+               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590},
+               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.015471, z_score: 2.418489},
+               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.073769, z_score: 1.787582}
              ]
            ] = MoransI.local_morans_i(image)
   end

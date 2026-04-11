@@ -17,7 +17,7 @@ The package can be installed by adding `moransi` to your list of dependencies in
 ```elixir
 def deps do
   [
-    {:moransi, "~> 0.1.2"}
+    {:moransi, "~> 0.2.0"}
   ]
 end
 ```

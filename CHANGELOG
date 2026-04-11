@@ -1,3 +1,10 @@
+## [0.2.0] - 2026-04-11
+### Fixed
+- S2 formula corrected from `2 * sum(w_i²)` to `4 * sum(w_i²)` for symmetric binary weights
+- Global variance now subtracts `E(I)²` per the standard randomization formula
+- Local Moran's I expected value now uses `-w_i / (n-1)` per cell instead of the global `-1 / (n-1)`
+- `coarse_grain/2` now uses the correct axis (1) for column count when computing output width
+
 ## [0.1.2] - 2025-10-16
 ### Added
 - Utility for coarse-graining images

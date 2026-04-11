@@ -13,7 +13,7 @@ defmodule MoransI.Utils.ImageTransform do
     min_max = Enum.min_max(blocks)
     threshold = (Nx.to_number(elem(min_max, 1)) - Nx.to_number(elem(min_max, 0))) / 2
 
-    new_width = div(Nx.axis_size(image_matrix, 0), partition_size)
+    new_width = div(Nx.axis_size(image_matrix, 1), partition_size)
 
     blocks
     |> Enum.map(fn v -> if Nx.to_number(v) < threshold, do: 0, else: 1 end)

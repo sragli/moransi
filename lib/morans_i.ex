@@ -213,9 +213,9 @@ defmodule MoransI do
     s1 = 2 * w_sum
 
     # S2: sum of squared row and column sums
+    # For a symmetric binary weight matrix: S2 = sum_i (w_i+ + w_+i)^2 = 4 * sum_i(row_sum_i^2)
     row_sums = neighbors_map |> Enum.map(fn {_i, neighbors} -> length(neighbors) end)
-    # Symmetric matrix
-    s2 = 2 * Enum.sum(Enum.map(row_sums, &(&1 * &1)))
+    s2 = 4 * Enum.sum(Enum.map(row_sums, &(&1 * &1)))
 
     # Assuming normal distribution
     b2 = 3.0
@@ -226,7 +226,9 @@ defmodule MoransI do
 
     denominator = (n - 1) * (n - 2) * (n - 3) * s0 * s0
 
-    if denominator != 0, do: numerator / denominator, else: 2.0 / ((n - 1) * s0)
+    e_i_sq = 1.0 / ((n - 1) * (n - 1))
+    raw = if denominator != 0, do: numerator / denominator, else: 2.0 / ((n - 1) * s0)
+    max(0.0, raw - e_i_sq)
   end
 
   # Sequential local calculation
@@ -287,7 +289,7 @@ defmodule MoransI do
         0.0
       end
 
-    expected_local = -1.0 / (n - 1)
+    expected_local = -length(neighbors) / (n - 1)
     local_variance = calculate_local_variance(neighbors, n)
 
     z_score = z_score(local_variance, expected_local, local_i)
