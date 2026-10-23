@@ -17,7 +17,7 @@ The package can be installed by adding `moransi` to your list of dependencies in
 ```elixir
 def deps do
   [
-    {:moransi, "~> 0.2.0"}
+    {:moransi, "~> 0.3.0"}
   ]
 end
 ```
@@ -33,11 +33,13 @@ end
   * S0: Sum of all spatial weights
   * S1: Sum of squared weights considering symmetry
   * S2: Sum of squared row and column sums of the weights matrix
-* Uses the standard variance formula for Moran's I under the normality assumption:
+* Uses the randomization variance formula for global Moran's I:
 
 $$
-  Var(I) = \frac{n((n²-3n+3)S1 - nS2 + 3S0²) - b2((n²-n)S1 - 2nS2 + 6S0²)}{(n-1)(n-2)(n-3)S0²}
+  Var(I) = \frac{n((n²-3n+3)S1 - nS2 + 3S0²) - b2((n²-n)S1 - 2nS2 + 6S0²)}{(n-1)(n-2)(n-3)S0²} - E(I)^2
 $$
+
+where $b2 = n \sum_i (x_i - \bar{x})^4 / \left(\sum_i (x_i - \bar{x})^2\right)^2$ is the normalized fourth moment of the observed values.
 
 ### Interpretation
 

@@ -36,6 +36,7 @@ defmodule MoransI do
 
     {numerator, w_sum} = calculate_global_components(deviations_array, neighbors_map)
     denominator = calculate_denominator(deviations_array)
+    b2 = calculate_kurtosis(deviations_array, denominator, n)
 
     morans_i =
       if w_sum > 0 and denominator > 0 do
@@ -45,7 +46,7 @@ defmodule MoransI do
       end
 
     expected_i = -1.0 / (n - 1)
-    variance = calculate_variance(n, neighbors_map, w_sum)
+    variance = calculate_variance(n, neighbors_map, w_sum, b2)
 
     z_score = z_score(variance, expected_i, morans_i)
     p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
@@ -87,9 +88,10 @@ defmodule MoransI do
 
     values_list = :array.to_list(values_array)
     mean = Enum.sum(values_list) / n
-    variance = calculate_sample_variance(values_list, mean)
-
     deviations_array = :array.map(fn _i, val -> val - mean end, values_array)
+    denominator = calculate_denominator(deviations_array)
+    variance = denominator / n
+    b2 = calculate_kurtosis(deviations_array, denominator, n)
 
     neighbors_map = build_neighbor_map(coords_map, rows, cols, connectivity)
 
@@ -102,6 +104,7 @@ defmodule MoransI do
           neighbors_map,
           mean,
           variance,
+          b2,
           n,
           chunk_size
         )
@@ -112,6 +115,7 @@ defmodule MoransI do
           neighbors_map,
           mean,
           variance,
+          b2,
           n
         )
       end
@@ -203,9 +207,9 @@ defmodule MoransI do
     |> Enum.reduce(0.0, fn dev, acc -> acc + dev * dev end)
   end
 
-  defp calculate_variance(_n, _neighbors_map, 0), do: 0.0
+  defp calculate_variance(_n, _neighbors_map, 0, _b2), do: 0.0
 
-  defp calculate_variance(n, neighbors_map, w_sum) do
+  defp calculate_variance(n, neighbors_map, w_sum, b2) do
     s0 = w_sum
 
     # S1: sum of squared weights (each neighbor relationship has weight 1)
@@ -216,9 +220,6 @@ defmodule MoransI do
     # For a symmetric binary weight matrix: S2 = sum_i (w_i+ + w_+i)^2 = 4 * sum_i(row_sum_i^2)
     row_sums = neighbors_map |> Enum.map(fn {_i, neighbors} -> length(neighbors) end)
     s2 = 4 * Enum.sum(Enum.map(row_sums, &(&1 * &1)))
-
-    # Assuming normal distribution
-    b2 = 3.0
 
     numerator =
       n * ((n * n - 3 * n + 3) * s1 - n * s2 + 3 * s0 * s0) -
@@ -238,11 +239,12 @@ defmodule MoransI do
          neighbors_map,
          mean,
          variance,
+         b2,
          n
        ) do
     0..(n - 1)
     |> Enum.map(fn i ->
-      calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n)
+      calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, b2, n)
     end)
   end
 
@@ -253,6 +255,7 @@ defmodule MoransI do
          neighbors_map,
          mean,
          variance,
+         b2,
          n,
          chunk_size
        ) do
@@ -261,7 +264,16 @@ defmodule MoransI do
     |> Task.async_stream(
       fn chunk ->
         Enum.map(chunk, fn i ->
-          calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n)
+          calculate_local_i(
+            i,
+            values_array,
+            deviations_array,
+            neighbors_map,
+            mean,
+            variance,
+            b2,
+            n
+          )
         end)
       end,
       max_concurrency: System.schedulers_online()
@@ -270,7 +282,16 @@ defmodule MoransI do
   end
 
   # Calculate local Moran's I for a single pixel
-  defp calculate_local_i(i, values_array, deviations_array, neighbors_map, mean, variance, n) do
+  defp calculate_local_i(
+         i,
+         values_array,
+         deviations_array,
+         neighbors_map,
+         mean,
+         variance,
+         b2,
+         n
+       ) do
     dev_i = :array.get(i, deviations_array)
     neighbors = Map.get(neighbors_map, i, [])
 
@@ -290,7 +311,7 @@ defmodule MoransI do
       end
 
     expected_local = -length(neighbors) / (n - 1)
-    local_variance = calculate_local_variance(neighbors, n)
+    local_variance = calculate_local_variance(neighbors, n, b2)
 
     z_score = z_score(local_variance, expected_local, local_i)
     p_value = 2 * (1 - standard_normal_cdf(abs(z_score)))
@@ -308,15 +329,14 @@ defmodule MoransI do
     }
   end
 
-  defp calculate_local_variance([], _n), do: 0.0
+  defp calculate_local_variance([], _n, _b2), do: 0.0
+  defp calculate_local_variance(_neighbors, n, _b2) when n <= 2, do: 0.0
 
-  defp calculate_local_variance(neighbors, n) do
+  defp calculate_local_variance(neighbors, n, b2) do
     w_i_sum = length(neighbors)
 
     # Each weight is 1.0, so sum of squares equals sum
     w_i_sq_sum = w_i_sum
-    b2 = 3.0
-
     term1 = w_i_sq_sum * (n - b2) / (n - 1)
     term2 = w_i_sum * w_i_sum * (2 * b2 - n) / ((n - 1) * (n - 2))
 
@@ -331,18 +351,18 @@ defmodule MoransI do
     max(0.0, local_var)
   end
 
-  defp calculate_sample_variance(values, mean) when length(values) > 1 do
-    sum_sq_dev =
-      values
-      |> Enum.reduce(0.0, fn val, acc ->
-        dev = val - mean
-        acc + dev * dev
+  defp calculate_kurtosis(_deviations_array, denominator, _n) when denominator == 0, do: 3.0
+
+  defp calculate_kurtosis(deviations_array, denominator, n) do
+    fourth_moment =
+      deviations_array
+      |> :array.to_list()
+      |> Enum.reduce(0.0, fn deviation, acc ->
+        acc + deviation * deviation * deviation * deviation
       end)
 
-    sum_sq_dev / (length(values) - 1)
+    n * fourth_moment / (denominator * denominator)
   end
-
-  defp calculate_sample_variance(_values, _mean), do: 0.0
 
   defp calculate_neighbor_mean([], _values_array), do: 0.0
 

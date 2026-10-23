@@ -1,3 +1,9 @@
+## [0.3.0] - 2026-10-23
+### Fixed
+- Global Moran's I variance now uses the data's normalized fourth moment
+- Local Moran's I now uses population variance for scaling
+- Local Moran's I handles two-cell images without a division-by-zero error
+
 ## [0.2.0] - 2026-04-11
 ### Fixed
 - S2 formula corrected from `2 * sum(w_i²)` to `4 * sum(w_i²)` for symmetric binary weights

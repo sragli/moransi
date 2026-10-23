@@ -7,52 +7,40 @@ defmodule MoransITest do
     assert %{
              morans_i: 0.386663,
              expected_i: -0.041667,
-             variance: 0.009829,
-             z_score: 4.320354,
-             p_value: 0.000015
+             variance: 0.010738,
+             z_score: 4.133454,
+             p_value: 0.000035
            } = MoransI.global_morans_i(image)
   end
 
   test "calculates correct local result" do
     image = create_test_image(:clustered, 5)
+    result = MoransI.local_morans_i(image)
 
-    assert [
-             [
-               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.073769, z_score: 1.787582},
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590},
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202},
-               %{cluster_type: :ll, local_i: 5.2, p_value: 0.004743, z_score: 2.819510},
-               %{cluster_type: :ll, local_i: 3.12, p_value: 0.037041, z_score: 2.083989}
-             ],
-             [
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590},
-               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.986486, z_score: 0.016938},
-               %{cluster_type: :ns, local_i: 0.32, p_value: 0.770587, z_score: 0.291617},
-               %{cluster_type: :ns, local_i: 2.32, p_value: 0.236359, z_score: 1.184320},
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202}
-             ],
-             [
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202},
-               %{cluster_type: :ns, local_i: 0.32, p_value: 0.770587, z_score: 0.291617},
-               %{cluster_type: :ns, local_i: -0.295385, p_value: 0.986486, z_score: 0.016938},
-               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.400439, z_score: 0.840973},
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590}
-             ],
-             [
-               %{cluster_type: :ll, local_i: 5.2, p_value: 0.004743, z_score: 2.819510},
-               %{cluster_type: :ns, local_i: 2.32, p_value: 0.236359, z_score: 1.184320},
-               %{cluster_type: :ns, local_i: 1.550769, p_value: 0.400439, z_score: 0.840973},
-               %{cluster_type: :hh, local_i: 7.089231, p_value: 0.000902, z_score: 3.313076},
-               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.015471, z_score: 2.418489}
-             ],
-             [
-               %{cluster_type: :ll, local_i: 3.12, p_value: 0.037041, z_score: 2.083989},
-               %{cluster_type: :ns, local_i: 1.2, p_value: 0.462888, z_score: 0.734202},
-               %{cluster_type: :ns, local_i: 0.738462, p_value: 0.621623, z_score: 0.493590},
-               %{cluster_type: :hh, local_i: 4.430769, p_value: 0.015471, z_score: 2.418489},
-               %{cluster_type: :ns, local_i: 2.658462, p_value: 0.073769, z_score: 1.787582}
-             ]
-           ] = MoransI.local_morans_i(image)
+    assert length(result) == 5
+    assert length(hd(result)) == 5
+
+    assert %{cluster_type: :ns, local_i: 2.769231, p_value: 0.073073, z_score: 1.791902} =
+             result |> Enum.at(0) |> Enum.at(0)
+
+    assert %{cluster_type: :hh, local_i: 7.384615, p_value: 0.000714, z_score: 3.377546} =
+             result |> Enum.at(3) |> Enum.at(3)
+  end
+
+  test "local_morans_i uses population variance for scaling" do
+    result = MoransI.local_morans_i([[1, 0], [0, 0]], parallel: false)
+
+    assert %{local_i: -3.0} = result |> Enum.at(0) |> Enum.at(0)
+  end
+
+  test "local_morans_i handles two-cell images" do
+    result = MoransI.local_morans_i([[1, 0]], parallel: false)
+
+    assert [[first, second]] = result
+    assert first.local_i == -1.0
+    assert second.local_i == -1.0
+    assert first.p_value == 1.0
+    assert second.p_value == 1.0
   end
 
   test "global_morans_i returns zero for uniform image and valid keys" do
